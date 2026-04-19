@@ -93,6 +93,6 @@ npx skills update
 ## Links
 
 - [Shiplight](https://www.shiplight.ai)
-- [Documentation](https://docs.shiplight.ai)
+- [Documentation](https://docs.shiplight.ai/getting-started/quick-start.html)
 - [`skills` CLI](https://github.com/vercel-labs/skills)
 - [`add-mcp` CLI](https://github.com/neondatabase/add-mcp)
