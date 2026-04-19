@@ -42,22 +42,24 @@ npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console
 ### Claude Code
 
 ```bash
-npx skills add ShiplightAI/agent-skills -a claude-code
-npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console -a claude-code
+npx -y skills add ShiplightAI/agent-skills -a claude-code -y && \
+npx -y add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console -a claude-code -y
 ```
 
 ### Cursor
 
 ```bash
-npx skills add ShiplightAI/agent-skills -a cursor
-npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console -a cursor
+npx -y skills add ShiplightAI/agent-skills -a cursor -y && \
+npx -y add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console -a cursor -y
 ```
+
+Cursor disables newly-added MCP servers by default. Enable it: **Cursor → Settings… → Cursor Settings → Tools & MCPs → Installed MCP Servers → shiplight (Disabled)** — toggle the switch to enable.
 
 ### Codex
 
 ```bash
-npx skills add ShiplightAI/agent-skills -a codex
-npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console -a codex
+npx -y skills add ShiplightAI/agent-skills -a codex -y && \
+npx -y add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console -a codex -y
 ```
 
 ### Any other agent
