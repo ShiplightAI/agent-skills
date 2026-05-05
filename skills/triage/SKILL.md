@@ -18,7 +18,7 @@ Use `/triage` when:
 ## When NOT to use
 
 Skip `/triage` when:
-- You need to create new tests from scratch — use `/create_e2e_tests`
+- You need to create new tests from scratch — use `/create-tests`
 - You want to verify code changes look correct — use `/verify`
 - Tests pass but you want to improve test quality — manual review is better
 - The application is intentionally being redesigned — rewrite tests instead
@@ -33,7 +33,7 @@ Skip `/triage` when:
 **Before editing any YAML test files**, you MUST:
 1. **Read the YAML spec resource** — call `ReadMcpResourceTool` with uri `shiplight://yaml-test-spec-v1.3.0` to learn the correct YAML syntax. Key rules: use `intent:` (NOT `description:`), understand DRAFT vs ACTION vs STEP statement types, and know the correct field names.
 2. **Read the action-entity schema** — call `ReadMcpResourceTool` with uri `shiplight://schemas/action-entity` to learn available actions and their parameters.
-3. Optionally read the `/create_e2e_tests` skill for authoring best practices.
+3. Optionally read the `/create-tests` skill for authoring best practices.
 
 Skipping step 1 leads to writing syntactically wrong tests (e.g., using `description:` instead of `intent:`, inventing non-existent action types). This wastes entire fix-run cycles.
 

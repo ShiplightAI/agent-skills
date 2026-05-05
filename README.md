@@ -19,11 +19,14 @@ npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console
 | Skill | Purpose |
 |-------|---------|
 | `/verify` | Visually confirm UI changes in the browser after a code change |
-| `/create_e2e_tests` | Spec-driven E2E test creation: plan, scaffold, and write YAML tests by walking through the app |
+| `/create-tests` | Spec-driven E2E test creation: plan, scaffold, and write YAML tests by walking through the app |
 | `/triage` | Reproduce failing E2E tests, diagnose root causes, fix YAML, and report app bugs |
 | `/cloud` | Sync local tests with Shiplight cloud for scheduled runs, team collaboration (subscription required) |
 
 ### Review helpers
+
+
+
 
 | Skill | Purpose |
 |-------|---------|

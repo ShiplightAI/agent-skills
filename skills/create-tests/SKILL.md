@@ -1,5 +1,5 @@
 ---
-name: create_e2e_tests
+name: create-tests
 description: "Spec-driven E2E test creation: plan what to test through structured discovery phases, then scaffold a local Shiplight test project and write YAML tests by walking through the app in a browser."
 ---
 
@@ -9,7 +9,7 @@ A spec-driven workflow that front-loads testing expertise through structured pla
 
 ## When to use
 
-Use `/create_e2e_tests` when the user wants to:
+Use `/create-tests` when the user wants to:
 - Create a new local test project from scratch
 - Add YAML tests for a web application
 - Set up authentication for a test project
