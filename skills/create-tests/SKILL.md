@@ -163,29 +163,36 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 Skip any steps already done (project exists, deps installed, auth configured).
 
-1. **Configure AI provider** — check if the test project already has a `.env` with an AI API key. If not, ask the user to choose a provider:
+1. **Scaffold the project** — call `scaffold_project` with the absolute project path. This creates `package.json`, `playwright.config.ts`, `.env.example`, `.gitignore`, and `tests/`.
 
-   > To run YAML tests, I need an AI provider for resolving test steps. Which provider would you like to use?
+2. **Configure AI provider if needed** — AI providers are optional when the project already has a valid `SHIPLIGHT_API_TOKEN`; Shiplight acts as the LLM proxy and no separate model API key is required. After scaffolding, check the test project's `.env` and the current environment:
+
+   - If `SHIPLIGHT_API_TOKEN` is present, use it and do not ask for another provider.
+   - If any supported provider credentials are already configured, use them.
+   - If neither is configured, ask the user to choose the lowest-friction option:
+
+   > To run YAML tests, Shiplight needs an LLM for resolving AI-backed steps. Which setup would you like to use?
    >
-   > A) **Google AI** — `GOOGLE_API_KEY` ([Get key](https://aistudio.google.com/app/apikey)) — default model: `gemini-3.1-flash-lite-preview`
-   > B) **Anthropic** — `ANTHROPIC_API_KEY` ([Get key](https://console.anthropic.com/settings/keys)) — default model: `claude-haiku-4-5`
-   > C) **OpenAI** — `OPENAI_API_KEY` ([Get key](https://platform.openai.com/api-keys)) — default model: `gpt-5.4-mini`
-   > D) **Azure OpenAI** — requires `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` — set `WEB_AGENT_MODEL=azure:<deployment>`
-   > E) **AWS Bedrock** — uses AWS credential chain — set `WEB_AGENT_MODEL=bedrock:<model_id>`
-   > F) **Google Vertex AI** — uses GCP Application Default Credentials — set `WEB_AGENT_MODEL=vertex:<model>`
-   > G) **I already have it configured**
+   > A) **Shiplight proxy** — `SHIPLIGHT_API_TOKEN` ([Get token](https://app.shiplight.ai/settings/api-tokens)); no separate model key required
+   > B) **Google AI** — `GOOGLE_API_KEY` ([Get key](https://aistudio.google.com/app/apikey))
+   > C) **Anthropic** — `ANTHROPIC_API_KEY` ([Get key](https://console.anthropic.com/settings/keys))
+   > D) **OpenAI** — `OPENAI_API_KEY` ([Get key](https://platform.openai.com/api-keys))
+   > E) **Azure OpenAI** — requires `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT`; set `WEB_AGENT_MODEL=azure:<deployment>`
+   > F) **AWS Bedrock** — uses AWS credential chain; set `WEB_AGENT_MODEL=bedrock:<model_id>`
+   > G) **Google Vertex AI** — uses GCP Application Default Credentials; set `WEB_AGENT_MODEL=vertex:<model>`
+   > H) **I already have it configured**
 
-   After the user chooses, ask for their API key and save it to the test project's `.env` file. For A/B/C, the model is auto-detected from the key. For D/E/F, also save `WEB_AGENT_MODEL` with the appropriate `provider:model` prefix. Optionally, the user can set `WEB_AGENT_MODEL` to override the default model (e.g., `WEB_AGENT_MODEL=claude-sonnet-4-6`).
+   Save any provided token or key to the test project's `.env` after confirming `.env` is gitignored. For Azure, Bedrock, and Vertex, also save `WEB_AGENT_MODEL` with the appropriate `provider:model` prefix when required.
 
-2. **Scaffold the project** — call `scaffold_project` with the absolute project path. This creates `package.json`, `playwright.config.ts`, `.env.example`, `.gitignore`, and `tests/`. Save the API key to `.env`.
+3. **Read the live schemas** — before writing any YAML, read `shiplight://yaml-test-spec-v1.3.0` and `shiplight://schemas/action-entity`. These resources are the source of truth for top-level keys, statement syntax, action names, and action parameters.
 
-3. **Install dependencies**:
+4. **Install dependencies**:
    ```bash
    npm install
    npx playwright install chromium
    ```
 
-4. **Set up authentication (if needed)** — follow the standard [Playwright authentication pattern](https://playwright.dev/docs/auth).
+5. **Set up authentication (if needed)** — follow the standard [Playwright authentication pattern](https://playwright.dev/docs/auth).
 
    Add credentials as variables in `playwright.config.ts`:
 
@@ -210,7 +217,7 @@ Skip any steps already done (project exists, deps installed, auth configured).
 
    Write `auth.setup.ts` with standard Playwright login code. For TOTP, implement RFC 6238 using `node:crypto` (HMAC-SHA1 + base32 decode) — no third-party dependency needed.
 
-   **Verify auth before proceeding.** Run `npx shiplight test --headed` to execute the auth setup and confirm it saves `storage-state.json`. If it fails, escalate to the user — auth is a prerequisite for everything else.
+   **Verify auth before proceeding.** Run the narrowest possible auth/setup target, then confirm it saves `storage-state.json`. Avoid running the entire suite just to verify auth, because unrelated test failures can block setup. If auth fails, escalate to the user — auth is a prerequisite for everything else.
 
    If the test plan involves special auth requirements (e.g., one account per test, multiple roles), confirm the auth strategy with the user before proceeding.
 
@@ -379,8 +386,8 @@ Each test must run independently — never depend on another test's side effects
 
 ```yaml
 # BAD: depends on a previous test having created "My Project"
-test: Delete a project
-steps:
+goal: Delete a project
+statements:
   - URL: /projects
   - intent: Click on "My Project"
     action: click
@@ -390,10 +397,9 @@ steps:
     locator: "getByRole('button', { name: 'Delete' })"
 
 # GOOD: creates its own data, then tests the behavior
-test: Delete a project
-steps:
-  - CODE:
-    js: |
+goal: Delete a project
+statements:
+  - CODE: |
       const res = await page.request.post('/api/projects', {
         data: { name: 'Delete-Test-' + Date.now() }
       });
@@ -418,8 +424,8 @@ Each test should verify one logical user journey. If step 3 of 8 fails, steps 4-
 
 ```yaml
 # BAD: tests login, settings change, AND deletion in one test
-test: Full user lifecycle
-steps:
+goal: Full user lifecycle
+statements:
   - intent: Log in
   - intent: Navigate to settings
   - intent: Change display name
@@ -430,21 +436,21 @@ steps:
 
 # GOOD: separate tests, each verifiable in isolation
 # File: update-display-name.test.yaml
-test: Update display name from settings
-steps:
+goal: Update display name from settings
+statements:
   - URL: /settings
   - intent: Clear the display name field and type "New Name"
-    action: fill
+    action: input_text
     locator: "getByLabel('Display name')"
-    value: "New Name"
+    text: "New Name"
   - intent: Click Save
     action: click
     locator: "getByRole('button', { name: 'Save' })"
   - VERIFY: Success message "Settings saved" is visible
 
 # File: delete-account.test.yaml (separate test)
-test: Delete account from account page
-steps:
+goal: Delete account from account page
+statements:
   - URL: /account
   # ... focused on deletion only
 ```
@@ -455,17 +461,17 @@ Test visible outcomes — text, navigation, enabled/disabled states. Never asser
 
 ```yaml
 # BAD: asserts implementation details
-- VERIFY:
-    js: |
-      const el = await page.locator('.btn-primary');
-      await expect(el).toHaveClass(/disabled/);
-      await expect(el).toHaveAttribute('data-state', 'submitted');
+- VERIFY: The submit button uses disabled implementation markers
+  js: |
+    const el = await page.locator('.btn-primary');
+    await expect(el).toHaveClass(/disabled/);
+    await expect(el).toHaveAttribute('data-state', 'submitted');
 
 # GOOD: asserts what a user would observe
 - VERIFY: The Submit button is disabled
-    js: |
-      await expect(page.getByRole('button', { name: 'Submit' }))
-        .toBeDisabled({ timeout: 2000 });
+  js: |
+    await expect(page.getByRole('button', { name: 'Submit' }))
+      .toBeDisabled({ timeout: 2000 });
 ```
 
 ### Focused assertions
@@ -496,11 +502,10 @@ Don't assert that Stripe's checkout, Google OAuth's consent screen, or Twilio's 
 - VERIFY: Stripe shows success checkmark
 
 # GOOD: mock the payment API, test your success handling
-- CODE:
-    js: |
-      await page.route('**/api/payments', route =>
-        route.fulfill({ status: 200, json: { status: 'succeeded', id: 'pi_mock' } })
-      );
+- CODE: |
+    await page.route('**/api/payments', route =>
+      route.fulfill({ status: 200, json: { status: 'succeeded', id: 'pi_mock' } })
+    );
 - intent: Click the Pay button
   action: click
   locator: "getByRole('button', { name: 'Pay' })"
@@ -514,15 +519,14 @@ Use unique identifiers per test run to avoid collisions. Never rely on hardcoded
 ```yaml
 # BAD: hardcoded name — collides if tests run in parallel or data persists
 - intent: Type "Test User" into the name field
-  action: fill
+  action: input_text
   locator: "getByLabel('Name')"
-  value: "Test User"
+  text: "Test User"
 
 # GOOD: unique per run — no collisions
-- CODE:
-    js: "save_variable('testName', 'Test-User-' + Date.now());"
+- CODE: "save_variable('testName', 'Test-User-' + Date.now());"
 - intent: Type the generated name into the name field
-  action: fill
+  action: input_text
   locator: "getByLabel('Name')"
   text: "{{testName}}"
 ```
@@ -541,13 +545,12 @@ When a test needs preconditions (a user exists, a project is created), set them 
 # ... now the actual test starts
 
 # GOOD: API seed in one step, then test the real behavior
-- CODE:
-    js: |
-      const res = await page.request.post('/api/projects', {
-        data: { name: 'Seed-' + Date.now(), team: 'engineering' }
-      });
-      const { slug } = await res.json();
-      save_variable('projectSlug', slug);
+- CODE: |
+    const res = await page.request.post('/api/projects', {
+      data: { name: 'Seed-' + Date.now(), team: 'engineering' }
+    });
+    const { slug } = await res.json();
+    save_variable('projectSlug', slug);
 - URL: /projects/{{projectSlug}}/settings
 - WAIT_UNTIL: Settings page has loaded
 # ... test starts immediately at the point that matters
@@ -569,9 +572,9 @@ Use the right wait for the situation. `WAIT_UNTIL:` costs 5-10s per check (AI re
 
 # ALSO GOOD: short WAIT for known, fast delays (animations, transitions, debounce)
 - intent: Type search query
-  action: fill
+  action: input_text
   locator: "getByRole('searchbox')"
-  value: "test"
+  text: "test"
 - WAIT: Wait for debounce to fire
   seconds: 1
 - VERIFY: Search suggestions are visible
@@ -585,13 +588,13 @@ Real users hit errors. A test suite that only covers happy paths gives false con
 
 ```yaml
 # Covers: empty state, invalid input, network failure
-test: Search handles no results gracefully
-steps:
+goal: Search handles no results gracefully
+statements:
   - URL: /search
   - intent: Type a query that returns no results
-    action: fill
+    action: input_text
     locator: "getByRole('searchbox')"
-    value: "zzz_no_match_zzz"
+    text: "zzz_no_match_zzz"
   - intent: Submit the search
     action: click
     locator: "getByRole('button', { name: 'Search' })"
