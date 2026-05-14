@@ -19,7 +19,7 @@ Use `/create-tests` when the user wants to:
 
 1. **Always produce artifacts.** Every phase produces durable artifacts: Phases 1-3 write markdown specs, Phase 4 writes `.test.yaml` files, and Phase 5 reconciles the specs with the implemented tests. Artifacts clarify your own thinking, give the user something to review, and guide later phases. When the user provides detailed requirements, use them as source material — skip questions already answered, but still produce the artifact.
 
-2. **Confirm before implementing.** Present the spec (Phase 2 checkpoint) for user confirmation before spending time on browser-walking and test writing. Echo back your understanding as structured scenarios to catch mismatches early.
+2. **Confirm before implementing.** Present the spec (Phase 2 checkpoint) for user confirmation before spending time on browser-walking and test writing. Echo back the outcomes and key scenarios to catch mismatches early.
 
 3. **Each phase reads the previous phase's artifact.** Discover feeds Specify, Specify feeds Plan, Plan feeds Implement, Implement feeds Verify. If an artifact exists from a prior run, offer to reuse it.
 
@@ -106,7 +106,7 @@ Check for existing artifacts before starting. The only way to skip artifact gene
    |---------|----------|-------------------|----------|------------------|
    | Existing users can sign in and access their workspace | P0 | Core account access works | Happy path, invalid password | MFA recovery out of scope |
 
-3. **Add review decisions only when needed** — if there are unresolved product, scope, or risk decisions a PM/director can answer, add a short **Review Decisions** table near the top. Omit this section when there are no open decisions.
+3. **Add review decisions only when needed** — if there are unresolved product, scope, or risk decisions a product owner can answer, add a short **Review Decisions** table near the top. Omit this section when there are no open decisions.
 
    | Decision | Impact | Recommendation |
    |----------|--------|----------------|
@@ -160,8 +160,7 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 4. **Per-test guidance** — for each test file, specify:
    - **Data strategy**: what data to create/use, cleanup approach
-   - **Wait strategy**: where to use WAIT_UNTIL vs WAIT, expected loading points
-   - **Flakiness risks**: specific things to watch for in this test
+   - **Flakiness risks**: specific things to watch for in this test, including any known long-running asynchronous behavior
 
 5. **Write `test-plan.md`**.
 
@@ -252,7 +251,7 @@ For each test in the plan (or each test the user wants):
 **Important:** Do NOT write YAML tests from imagination. Always walk through the app in a browser session first to capture real locators. Tests without locators are rejected by `validate_yaml_test`.
 
 When guided by `test-plan.md`:
-- Apply the specified wait strategy at loading points
+- Follow the data strategy and flakiness notes from the plan
 - Cover the edge cases and assertions defined in the spec
 
 ### Run tests
@@ -267,7 +266,7 @@ npx shiplight test --headed
 
 1. **Report** — tell the user which test failed and why (one sentence).
 2. **Classify** the failure:
-   - **Implementation fix** (wrong locator, missing wait, timing) → fix and retry.
+   - **Implementation fix** (wrong locator, missing assertion, timing) → fix and retry.
    - **Spec mismatch** (app behavior differs from spec) → ask the user whether to update the spec or skip the scenario.
 3. **Escalate** if a fix doesn't work — don't keep retrying the same approach.
 
@@ -354,9 +353,6 @@ Because `intent` drives self-healing, it must be specific enough for an agent to
 ```yaml
 - intent: Drag slider to 50% position
   js: "await page.getByRole('slider').first().fill('50')"
-
-- intent: Wait for network idle after form submit
-  js: "await page.waitForLoadState('networkidle')"
 ```
 
 ### `js:` coding rules
@@ -380,10 +376,10 @@ Because `intent` drives self-healing, it must be specific enough for an agent to
 
 ### Waiting syntax
 
-- **`WAIT_UNTIL:`** — AI checks the condition repeatedly until met or timeout. Default timeout is 60 seconds. Each AI check takes 5–10s, so set `timeout_seconds` to at least 15.
-- **`WAIT:`** — fixed-duration pause. Use `seconds:` to set duration.
+- **`WAIT:`** — fixed-duration pause. Use only for known delays. Use `seconds:` to set duration.
+- **`WAIT_UNTIL:`** — AI checks the condition repeatedly until met or timeout. It makes LLM model calls. Use it only for long conditional waits.
 
-See [Smart waiting](#smart-waiting) in E2E Test Design for when to use each.
+See [Explicit wait policy](#explicit-wait-policy) below for when to use each.
 
 ### General conventions
 
@@ -424,7 +420,7 @@ statements:
       const project = await res.json();
       save_variable('projectName', project.name);
   - URL: /projects
-  - WAIT_UNTIL: The project list has loaded
+  - VERIFY: The project list shows the project we just created
   - intent: Click on the project we just created
     action: click
     js: "await page.getByText('{{projectName}}').click()"
@@ -559,7 +555,7 @@ When a test needs preconditions (a user exists, a project is created), set them 
 - intent: Type project name
 - intent: Select team
 - intent: Click Create
-- WAIT_UNTIL: Project page loads
+- VERIFY: Project page shows the newly created project
 # ... now the actual test starts
 
 # GOOD: API seed in one step, then test the real behavior
@@ -570,35 +566,13 @@ When a test needs preconditions (a user exists, a project is created), set them 
     const { slug } = await res.json();
     save_variable('projectSlug', slug);
 - URL: /projects/{{projectSlug}}/settings
-- WAIT_UNTIL: Settings page has loaded
+- VERIFY: Settings page is visible
 # ... test starts immediately at the point that matters
 ```
 
-### Smart waiting
+### Explicit wait policy
 
-Use the right wait for the situation. `WAIT_UNTIL:` costs 5-10s per check (AI resolution), so it's overkill for short, predictable delays. `WAIT:` is fine when the delay is short and known. The anti-pattern is using `WAIT:` as a *substitute* for condition-based waiting when the delay is unpredictable.
-
-```yaml
-# BAD: guessing how long a data fetch takes — too short in CI, too long locally
-- WAIT: Wait for data to load
-  seconds: 5
-- VERIFY: The table shows results
-
-# GOOD: condition-based wait for unpredictable operations
-- WAIT_UNTIL: The data table has at least one row visible
-  timeout_seconds: 30
-
-# ALSO GOOD: short WAIT for known, fast delays (animations, transitions, debounce)
-- intent: Type search query
-  action: input_text
-  locator: "getByRole('searchbox')"
-  text: "test"
-- WAIT: Wait for debounce to fire
-  seconds: 1
-- VERIFY: Search suggestions are visible
-```
-
-Rule of thumb: if the delay is **predictable and under 5s** (animation, debounce, transition), use `WAIT:`. If the delay is **unpredictable** (API call, data loading, file processing), use `WAIT_UNTIL:`.
+Minimize explicit waits. Browser actions, navigation, and assertions already include waiting behavior. Do not add a wait after ordinary page loads, clicks, form submits, or data refreshes just because the UI might change. Let the next ACTION or VERIFY prove the expected state.
 
 ### Test error states, not just happy paths
 
@@ -632,7 +606,7 @@ Tests that modify shared global state (e.g., site-wide settings, the only admin 
 
 A test that passes on retry is still broken. Never add retries to mask flakiness — find and fix the root cause:
 
-- **Timing flake?** → Add a proper `WAIT_UNTIL:` for the right condition
+- **Timing flake?** → First rely on the next action/assertion or add a targeted assertion. Only add an explicit wait when necessary.
 - **Data flake?** → Use unique test data, add proper cleanup
 - **Order flake?** → The test has a hidden dependency on another test — make it self-contained
 - **Environment flake?** → Mock the unstable external service
@@ -642,7 +616,7 @@ A test that passes on retry is still broken. Never add retries to mask flakiness
 ```
 my-tests/
 ├── test-specs/                   # Spec artifacts (version-controlled)
-│   ├── test-context.md           # Phase 1: app & risk profile
+│   ├── test-context.md           # Phase 1: app, risk, and testing context
 │   ├── test-spec.md              # Phase 2: outcome summary + detailed scenarios
 │   └── test-plan.md              # Phase 3: implementation plan
 │
