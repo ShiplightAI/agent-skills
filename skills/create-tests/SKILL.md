@@ -28,7 +28,7 @@ Use `/create-tests` when the user wants to:
 ## Phase Overview
 
 ```
-Phase 1: Discover  → test-strategy.md    (understand the app & user goals)
+Phase 1: Discover  → test-context.md     (understand the app & user goals)
 Phase 2: Specify   → test-spec.md        (define what to test in Given/When/Then)
 Phase 3: Plan      → test-plan.md        (prioritize, structure, per-test guidance)
 Phase 4: Implement → *.test.yaml files   (setup project, write tests, run them)
@@ -42,7 +42,8 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 | Situation | Behavior |
 |-----------|----------|
 | User explicitly says "skip to implement" or "just write the tests" | Phase 4 only |
-| Existing `test-specs/test-strategy.md` | Offer to reuse, skip Phase 1 |
+| Existing `test-specs/test-context.md` | Offer to reuse, skip Phase 1 |
+| Existing `test-specs/test-strategy.md` | Old name for `test-context.md`; read it as context, but create/update `test-context.md` going forward |
 | Existing `test-specs/test-spec.md` | Offer to reuse, skip Phases 1-2 |
 | Existing `test-specs/test-plan.md` | Offer to reuse, skip to Phase 4 |
 
@@ -52,7 +53,9 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 **Goal:** Understand the application, the user's role, and what matters most to test.
 
-**Output:** `<project>/test-specs/test-strategy.md`
+**Output:** `<project>/test-specs/test-context.md`
+
+`test-strategy.md` is the old name for `test-context.md`. If an existing project has `test-specs/test-strategy.md`, read it as the Phase 1 context artifact, but write new or updated context to `test-specs/test-context.md`.
 
 ### Steps
 
@@ -69,7 +72,7 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 3. **Understand what to test** — ask the user what they'd like to test, then ask targeted follow-up questions (one at a time, with recommendations based on your scan) to fill gaps: risk areas, user roles, authentication, data strategy, critical journeys. Skip questions the user has already answered.
 
-4. **Write `test-strategy.md`** containing:
+4. **Write `test-context.md`** containing:
    - **App profile**: name, URL, framework, key pages/features
    - **Risk profile**: what matters most, what's fragile
    - **Testing scope**: what's in/out, user roles to cover
@@ -82,13 +85,13 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 **Goal:** Define concrete test scenarios in structured Given/When/Then format, prioritized by risk. Surface ambiguities that would cause flaky or incomplete tests.
 
-**Input:** reads `test-specs/test-strategy.md`
+**Input:** reads `test-specs/test-context.md`
 
 **Output:** `<project>/test-specs/test-spec.md`
 
 ### Steps
 
-1. **Read** `test-strategy.md` to understand scope and priorities.
+1. **Read** `test-context.md` to understand scope and priorities.
 
 2. **Generate user journey specs** — for each critical journey, write:
    - **Title**: descriptive name (e.g., "New user signup with email verification")
@@ -624,7 +627,7 @@ A test that passes on retry is still broken. Never add retries to mask flakiness
 ```
 my-tests/
 ├── test-specs/                   # Spec artifacts (version-controlled)
-│   ├── test-strategy.md          # Phase 1: app & risk profile
+│   ├── test-context.md           # Phase 1: app & risk profile
 │   ├── test-spec.md              # Phase 2: Given/When/Then scenarios
 │   └── test-plan.md              # Phase 3: implementation plan
 │
