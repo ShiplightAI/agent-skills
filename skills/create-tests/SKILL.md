@@ -25,6 +25,8 @@ Use `/create-tests` when the user wants to:
 
 4. **Escalate, don't loop.** When something fails or is ambiguous, report it and ask the user rather than retrying silently.
 
+5. **Learn into `test-context.md`.** `test-context.md` is the living project memory for this test project. When the user provides durable product, domain, backend, account, data, environment, or testing-preference knowledge, fold it into `test-context.md` before ending the session. Do not store raw secrets; store variable names, roles, access patterns, and setup instructions instead.
+
 ## Phase Overview
 
 ```
@@ -64,13 +66,14 @@ Check for existing artifacts before starting. The only way to skip artifact gene
    If cloud MCP tools are available (`SHIPLIGHT_API_TOKEN` is set), use the `/cloud` skill to fetch environments and test accounts — this can pre-fill the target URL and credentials.
 
 2. **Silent scan** — before asking questions, gather context from what's available:
+   - Existing `test-context.md` (or old `test-strategy.md`) — use it to avoid asking questions already answered
    - Codebase: routes, components, `package.json`, framework
    - Git branch diff (what changed recently)
    - Existing tests (what's already covered)
    - PRDs, docs, README files
    - Cloud environments (if cloud MCP tools available)
 
-3. **Understand what to test** — ask the user what they'd like to test, then ask targeted follow-up questions (one at a time, with recommendations based on your scan) to fill gaps: risk areas, user roles, authentication, data strategy, critical journeys. Skip questions the user has already answered.
+3. **Understand what to test** — ask the user what they'd like to test, then ask targeted follow-up questions (one at a time, with recommendations based on your scan) to fill gaps: risk areas, user roles, authentication, data strategy, critical journeys. Skip questions already answered in existing context unless current evidence conflicts with them.
 
 4. **Write `test-context.md`** containing:
    - **App profile**: name, URL, framework, key pages/features
@@ -78,6 +81,10 @@ Check for existing artifacts before starting. The only way to skip artifact gene
    - **Testing scope**: what's in/out, user roles to cover
    - **Data strategy**: how test data will be created and cleaned up
    - **Environment**: target URL, auth method, any special setup
+   - **Known facts and decisions**: durable facts learned from users or implementation, including "do not ask again" answers
+   - **Open questions**: unresolved or stale facts that need confirmation later
+
+5. **Keep context current** — during all later phases, track durable knowledge the user teaches you or that implementation reveals. Update the relevant `test-context.md` section before ending the session instead of leaving that knowledge only in chat.
 
 ---
 
@@ -220,7 +227,7 @@ Skip any steps already done (project exists, deps installed, auth configured).
 
    Write `auth.setup.ts` with standard Playwright login code. For TOTP, implement RFC 6238 using `node:crypto` (HMAC-SHA1 + base32 decode) — no third-party dependency needed.
 
-   **Verify auth before proceeding.** Run the narrowest possible auth/setup target, then confirm it saves `storage-state.json`. Avoid running the entire suite just to verify auth, because unrelated test failures can block setup. If auth fails, escalate to the user — auth is a prerequisite for everything else.
+   **Verify auth before proceeding.** Run the narrowest possible auth/setup target, then confirm it saves `storage-state.json`. Avoid running all tests in the project just to verify auth, because unrelated test failures can block setup. If auth fails, escalate to the user — auth is a prerequisite for everything else.
 
    If the test plan involves special auth requirements (e.g., one account per test, multiple roles), confirm the auth strategy with the user before proceeding.
 
@@ -263,7 +270,7 @@ npx shiplight test --headed
 
 **Goal:** Validate test coverage against the spec and reconcile any drift.
 
-**Input:** reads `test-specs/test-spec.md`, `test-specs/test-plan.md`, and all `.test.yaml` files
+**Input:** reads `test-specs/test-context.md`, `test-specs/test-spec.md`, `test-specs/test-plan.md`, and all `.test.yaml` files
 
 This phase only runs when spec artifacts exist.
 
@@ -282,11 +289,12 @@ Flag gaps and extras (test steps not in the spec).
 
 ### Reconcile
 
-Update spec artifacts to match what was actually implemented:
+Update spec artifacts to match what was actually implemented and learned:
 
-1. **Update `test-spec.md`** — mark skipped scenarios with reason, add scenarios that emerged during implementation, update edge cases to reflect what was tested
-2. **Update `test-plan.md`** — correct file structure, note deviations from the original plan
-3. **Show diff summary** — tell the user what changed and why
+1. **Update `test-context.md`** — add durable product/domain/backend/account/data/environment/testing-preference knowledge learned during the session. Summarize facts; do not paste chat logs or secrets. If new evidence conflicts with existing context, mark the conflict or ask the user before overwriting.
+2. **Update `test-spec.md`** — mark skipped scenarios with reason, add scenarios that emerged during implementation, update edge cases to reflect what was tested
+3. **Update `test-plan.md`** — correct file structure, note deviations from the original plan
+4. **Show diff summary** — tell the user what changed and why
 
 This keeps artifacts accurate for future test maintenance and expansion.
 
@@ -587,7 +595,7 @@ Rule of thumb: if the delay is **predictable and under 5s** (animation, debounce
 
 ### Test error states, not just happy paths
 
-Real users hit errors. A test suite that only covers happy paths gives false confidence. For every critical journey, include at least one error/edge case test.
+Real users hit errors. A test project that only covers happy paths gives false confidence. For every critical journey, include at least one error/edge case test.
 
 ```yaml
 # Covers: empty state, invalid input, network failure
