@@ -17,7 +17,7 @@ Use `/create-tests` when the user wants to:
 
 ## Principles
 
-1. **Always produce artifacts.** Every phase writes a markdown file. Artifacts clarify your own thinking, give the user something to review, and guide later phases. When the user provides detailed requirements, use them as source material — skip questions already answered, but still produce the artifact.
+1. **Always produce artifacts.** Every phase produces durable artifacts: Phases 1-3 write markdown specs, Phase 4 writes `.test.yaml` files, and Phase 5 reconciles the specs with the implemented tests. Artifacts clarify your own thinking, give the user something to review, and guide later phases. When the user provides detailed requirements, use them as source material — skip questions already answered, but still produce the artifact.
 
 2. **Confirm before implementing.** Present the spec (Phase 2 checkpoint) for user confirmation before spending time on browser-walking and test writing. Echo back your understanding as structured scenarios to catch mismatches early.
 
@@ -25,13 +25,13 @@ Use `/create-tests` when the user wants to:
 
 4. **Escalate, don't loop.** When something fails or is ambiguous, report it and ask the user rather than retrying silently.
 
-5. **Learn into `test-context.md`.** `test-context.md` is the living project memory for this test project. When the user provides durable product, domain, backend, account, data, environment, or testing-preference knowledge, fold it into `test-context.md` before ending the session. Do not store raw secrets; store variable names, roles, access patterns, and setup instructions instead.
+5. **Learn into `test-context.md`.** `test-context.md` is the living project memory for this test project. When the user provides durable product, domain, backend, account, data, environment, or testing-preference knowledge, fold it into `test-context.md` according to the Phase 1 section meanings before ending the session. Do not store raw secrets; store variable names, roles, access patterns, and setup instructions instead.
 
 ## Phase Overview
 
 ```
 Phase 1: Discover  → test-context.md     (understand the app & user goals)
-Phase 2: Specify   → test-spec.md        (define what to test in Given/When/Then)
+Phase 2: Specify   → test-spec.md        (define outcomes and detailed scenarios)
 Phase 3: Plan      → test-plan.md        (prioritize, structure, per-test guidance)
 Phase 4: Implement → *.test.yaml files   (setup project, write tests, run them)
 Phase 5: Verify    → updated spec files  (coverage check, reconcile spec ↔ tests)
@@ -81,16 +81,16 @@ Check for existing artifacts before starting. The only way to skip artifact gene
    - **Testing scope**: what's in/out, user roles to cover
    - **Data strategy**: how test data will be created and cleaned up
    - **Environment**: target URL, auth method, any special setup
-   - **Known facts and decisions**: durable facts learned from users or implementation, including "do not ask again" answers
-   - **Open questions**: unresolved or stale facts that need confirmation later
+   - **Known facts and decisions**: user-stated testing preferences, constraints, and decisions that future agents should not re-derive and that are not already represented in repository artifacts, specs, or existing tests
+   - **Open questions**: unresolved or stale user questions that future agents should not repeatedly rediscover
 
-5. **Keep context current** — during all later phases, track durable knowledge the user teaches you or that implementation reveals. Update the relevant `test-context.md` section before ending the session instead of leaving that knowledge only in chat.
+5. **Keep context current** — during all later phases, keep `test-context.md` aligned with durable project context learned from the user, repository, implementation, and verification. Update the relevant `test-context.md` section from step 4 before ending the session.
 
 ---
 
 ## Phase 2: Specify
 
-**Goal:** Define concrete test scenarios in structured Given/When/Then format, prioritized by risk. Surface ambiguities that would cause flaky or incomplete tests.
+**Goal:** Define the outcomes this test project should give confidence in, then capture the detailed scenarios agents need to implement them. The spec should be reviewable by product owners at the top, and actionable for coding agents in the detail sections.
 
 **Input:** reads `test-specs/test-context.md`
 
@@ -100,26 +100,33 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 1. **Read** `test-context.md` to understand scope and priorities.
 
-2. **Generate user journey specs** — for each critical journey, write:
-   - **Title**: descriptive name (e.g., "New user signup with email verification")
+2. **Define outcome summary** — start `test-spec.md` with a business-readable table. Focus on product confidence, not implementation mechanics:
+
+   | Outcome | Priority | Confidence Gained | Coverage | Gaps / Decisions |
+   |---------|----------|-------------------|----------|------------------|
+   | Existing users can sign in and access their workspace | P0 | Core account access works | Happy path, invalid password | MFA recovery out of scope |
+
+3. **Add review decisions only when needed** — if there are unresolved product, scope, or risk decisions a PM/director can answer, add a short **Review Decisions** table near the top. Omit this section when there are no open decisions.
+
+   | Decision | Impact | Recommendation |
+   |----------|--------|----------------|
+   | Cover locked-account login? | Adds support-risk coverage | Defer unless lockout is launch-critical |
+
+4. **Generate scenario details** — below the summary, write detailed sections for each outcome. These are for implementation and maintenance:
+   - **Title**: descriptive name tied to the outcome
    - **Priority**: P0 (must-have), P1 (should-have), P2 (nice-to-have)
    - **Preconditions**: what must be true before the test starts (Given)
-   - **Happy path**: step-by-step actions and expected outcomes (When/Then)
-   - **Edge cases**: at least 2 per journey (e.g., invalid input, timeout, empty state)
+   - **Acceptance scenarios**: happy path and key variants in Given/When/Then form
+   - **Edge cases**: at least 2 per critical outcome where meaningful (e.g., invalid input, timeout, empty state)
    - **Data requirements**: what test data is needed
 
-3. **Review for testing risks** — scan each journey for issues that would cause flaky or incomplete tests: data dependencies, timing/async behavior, dynamic content, auth boundaries, third-party services, state isolation, environment differences. Add a **Testing Notes** section to each journey with identified risks and mitigations. If anything is ambiguous, ask the user (one at a time, with a recommended answer and impact statement).
+5. **Review for testing risks** — scan each scenario for issues that would cause flaky or incomplete tests: data dependencies, timing/async behavior, dynamic content, auth boundaries, third-party services, state isolation, environment differences. Add a **Testing Notes** section to each detailed scenario with identified risks and mitigations. If anything is ambiguous, ask the user (one at a time, with a recommended answer and impact statement).
 
-4. **Write `test-spec.md`** with all journey specs.
+6. **Write `test-spec.md`** with the outcome summary first, optional review decisions second, and detailed scenario sections after that.
 
-5. **Checkpoint** — present a summary table for user review:
+7. **Checkpoint** — present the outcome summary for user review:
 
-   | # | Journey | Priority | Steps | Edge Cases | Risks |
-   |---|---------|----------|-------|------------|-------|
-   | 1 | User signup | P0 | 5 | 3 | Timing |
-   | 2 | ... | ... | ... | ... | ... |
-
-   Ask: "Does this look right? Any journeys to add, remove, or reprioritize?"
+   Ask: "Do these outcomes match the confidence you need from this test project? Any business-critical outcome missing or incorrectly out of scope?"
 
    **Wait for user confirmation before proceeding.**
 
@@ -137,12 +144,12 @@ Check for existing artifacts before starting. The only way to skip artifact gene
 
 1. **Read** `test-spec.md`.
 
-2. **Define test file structure** — map journeys to test files:
+2. **Define test file structure** — map outcomes and scenarios to test files:
    ```
    tests/
    ├── auth.setup.ts          (if auth needed)
-   ├── signup.test.yaml        (Journey 1)
-   ├── checkout.test.yaml      (Journey 2)
+   ├── signup.test.yaml        (Outcome 1 / scenario group)
+   ├── checkout.test.yaml      (Outcome 2 / scenario group)
    └── ...
    ```
 
@@ -276,14 +283,14 @@ This phase only runs when spec artifacts exist.
 
 ### Coverage check
 
-For each spec journey, confirm the test covers the happy path and all listed edge cases.
+For each spec outcome, confirm the tests cover the promised scenarios and edge cases.
 
 Present a coverage summary:
 
-| Spec Journey | Priority | Scenarios Specified | Tests Written | Coverage |
-|-------------|----------|--------------------:|-------------:|----------|
-| User signup | P0 | 4 | 4 | ✓ |
-| Checkout | P0 | 3 | 2 | ✗ — edge case "empty cart" not covered |
+| Spec Outcome | Priority | Scenarios Specified | Tests Written | Coverage |
+|--------------|----------|--------------------:|-------------:|----------|
+| Existing users can sign in | P0 | 4 | 4 | ✓ |
+| Buyers can complete checkout | P0 | 3 | 2 | ✗ — edge case "empty cart" not covered |
 
 Flag gaps and extras (test steps not in the spec).
 
@@ -291,8 +298,8 @@ Flag gaps and extras (test steps not in the spec).
 
 Update spec artifacts to match what was actually implemented and learned:
 
-1. **Update `test-context.md`** — add durable product/domain/backend/account/data/environment/testing-preference knowledge learned during the session. Summarize facts; do not paste chat logs or secrets. If new evidence conflicts with existing context, mark the conflict or ask the user before overwriting.
-2. **Update `test-spec.md`** — mark skipped scenarios with reason, add scenarios that emerged during implementation, update edge cases to reflect what was tested
+1. **Update `test-context.md`** — keep all context sections aligned with durable project context learned during implementation and verification. Follow the section meanings from Phase 1; summarize durable context, do not paste chat logs, duplicate low-level facts already available in code/specs/tests, or store secrets. If new guidance conflicts with existing context, mark the conflict or ask before overwriting.
+2. **Update `test-spec.md`** — keep the outcome summary, optional review decisions, detailed scenarios, skipped scenarios, and edge cases aligned with what was tested
 3. **Update `test-plan.md`** — correct file structure, note deviations from the original plan
 4. **Show diff summary** — tell the user what changed and why
 
@@ -636,7 +643,7 @@ A test that passes on retry is still broken. Never add retries to mask flakiness
 my-tests/
 ├── test-specs/                   # Spec artifacts (version-controlled)
 │   ├── test-context.md           # Phase 1: app & risk profile
-│   ├── test-spec.md              # Phase 2: Given/When/Then scenarios
+│   ├── test-spec.md              # Phase 2: outcome summary + detailed scenarios
 │   └── test-plan.md              # Phase 3: implementation plan
 │
 ├── playwright.config.ts
