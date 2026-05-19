@@ -14,7 +14,7 @@ These best practices bridge the YAML language spec and the action catalog to hel
 
 - **ACTION is the default.** Capture locators via MCP tools (`act`, `get_locators`) during browser sessions, then write ACTION statements. ACTIONs replay deterministically (~1s).
 - **DRAFT is a last resort.** Only use DRAFT when the locator is genuinely unknowable at authoring time. DRAFTs are slow (~5-10s each, AI resolution at runtime). Tests with too many DRAFTs are rejected by `validate_yaml_test`.
-- **VERIFY for assertions.** Use `VERIFY:` for all assertions. Do not write assertion DRAFTs like `"Check that the button is visible"`.
+- **VERIFY for assertions.** Use `VERIFY:` for all assertions. 
 - **URL for navigation.** Use `URL: /path` for navigation instead of `action: go_to_url`.
 - **CODE for scripting.** Use `CODE:` for network mocking, localStorage manipulation, page-level scripting. Not for clicks, assertions, or navigation.
 
@@ -38,29 +38,38 @@ Because `intent` drives self-healing, it must be specific enough for an agent to
   locator: "getByRole('button', { name: 'Submit' })"
 ```
 
-### ACTION: structured format vs `js:` shorthand
+### ACTION: structured format
 
 **Use structured format by default** for all supported actions. Read the MCP resource `shiplight://schemas/action-entity` for the full list of available actions and their parameters.
 
-**Use `js:` only when the action doesn't map to a supported action** — e.g., complex multi-step interactions, custom Playwright API calls, or chained operations:
-
-```yaml
-- intent: Drag slider to 50% position
-  js: "await page.getByRole('slider').first().fill('50')"
-```
-
-### `js:` coding rules
-
-- Always resolve locators to a single element (e.g., `.first()`, `.nth(1)`) to avoid Playwright strict-mode errors
-- Always include `{ timeout: 5000 }` on actions for predictable timing
-- The `intent` is critical — it's the input for self-healing when `js` fails
-- `page`, `agent`, and `expect` are available in scope
-
 ### VERIFY best practices
 
-- Always set a short timeout (e.g., `{ timeout: 2000 }`) on `js:` assertions that have an AI fallback, so stale locators fall back to AI quickly instead of waiting the default 5s
-- Always use `VERIFY:` shorthand — do not use `action: verify` directly
-- **Be aware of false negatives with `js:` assertions.** The AI fallback only triggers when `js` **throws** (element not found, timeout). If `js` passes against the wrong element (stale selector matching a different element), the assertion silently succeeds — no fallback occurs. Keep `js:` assertions simple and specific to minimize this risk.
+`VERIFY:` has two modes:
+
+- **Natural language only** — the AI inspects the page and judges whether the statement is true. Slower but self-healing.
+- **With `js:`** — the JS runs first as a fast, deterministic check. If it throws (element not found, timeout, assertion failure), AI fallback kicks in to re-inspect the page.
+
+```yaml
+# Natural language only — AI inspects the page
+- VERIFY: The search dialog is visible.
+
+# With js: — JS runs first, AI fallback on throw
+- VERIFY: The search dialog is visible.
+  js: await expect(page.getByTestId('search-dialog-container')).toBeVisible({ timeout: 2000 })
+```
+
+**When to use each:**
+- Use natural language only when you don't have a reliable locator, or the check is inherently semantic (e.g., "the error message describes a permission problem").
+- Use `js:` when you have a stable locator and want fast, deterministic verification with AI as a fallback.
+
+**`js:` rules:**
+- **Keep it simple** — `js:` should only be a single Playwright `expect()` call (e.g., `toBeVisible`, `toHaveText`, `toHaveValue`). If the assertion requires complex logic, multi-step queries, or conditional checks, omit `js:` and let AI handle it via natural language.
+- `page`, `agent`, and `expect` are available in scope
+- Always set a short timeout (e.g., `{ timeout: 2000 }`) so stale locators fall back to AI quickly instead of waiting the default 5s
+- Always resolve locators to a single element (e.g., `.first()`, `.nth(1)`) to avoid Playwright strict-mode errors
+- **The AI fallback only triggers when `js` throws.** If `js` passes against the wrong element (stale selector matching a different element), the assertion silently succeeds — no fallback occurs. Keep `js:` assertions simple and specific to minimize this risk.
+
+Always use `VERIFY:` shorthand — do not use `action: verify` directly.
 
 ### IF/WHILE `js:` condition best practices
 
