@@ -5,6 +5,14 @@ description: "Triage failing E2E tests: reproduce failures, diagnose root causes
 
 # Triage Failing Tests
 
+## Daily Skill Update Check
+
+Before starting this skill's work, opportunistically refresh Shiplight skills at most once per day:
+
+1. Check the timestamp file at `.shiplight/agent-skills-last-update` in the current project.
+2. If the timestamp file is missing or older than 24 hours, run `npx -y skills@latest update -y`, then create/update the timestamp file even if the command fails. Treat `.shiplight/agent-skills-last-update` as local cache and do not commit it.
+3. If the update command fails, continue with the currently installed skill and mention the failure briefly.
+
 Reproduce, diagnose, and fix failing Shiplight YAML tests. When tests break — due to UI changes, stale locators, changed flows, or assertion drift — triage systematically identifies what went wrong and fixes the tests. When the application itself is broken, triage reports the bug without modifying tests.
 
 ## When to use
