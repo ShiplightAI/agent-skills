@@ -89,7 +89,7 @@ Open a browser session with `new_session` using `record_evidence: true`. Run all
 | ERR-09 | Concurrent error handling (multiple simultaneous failures) | Resilience | Mock multiple API failures, check UI doesn't cascade |
 | ERR-10 | Error logging doesn't expose PII | OWASP / Privacy | Check `get_browser_console_logs` during errors |
 
-**Browser validation:** Use `CODE` blocks to intercept network requests via `page.route()` to simulate failures. Check UI state after each failure. Use `get_browser_console_logs` for JavaScript errors.
+**Browser validation:** Use `description: + js:` statements to intercept network requests via `page.route()` to simulate failures. Check UI state after each failure. Use `get_browser_console_logs` for JavaScript errors.
 
 ```javascript
 // Example: Mock API 500 error
@@ -226,7 +226,8 @@ Generate a structured report saved to `shiplight/reports/resilience-review-{date
   severity: critical
   standard: UX-Error-Handling
   steps:
-    - CODE: |
+    - description: Mock the data API to return a 500 error
+      js: |
         await page.route('**/api/data**', route => {
           route.fulfill({
             status: 500,
@@ -248,7 +249,7 @@ Save all YAML tests to `shiplight/tests/resilience-review.test.yaml`.
 
 ## Tips
 
-- Use `page.route()` in CODE blocks — it's the primary tool for fault injection
+- Use `page.route()` in `description: + js:` statements — it's the primary tool for fault injection
 - Test the most critical user flows first (checkout, signup, core feature)
 - A blank screen is always a CRITICAL finding — it's the worst failure mode
 - Check `get_browser_console_logs` for uncaught promise rejections — they indicate missing error handling

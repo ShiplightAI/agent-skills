@@ -277,7 +277,8 @@ Also create /llms-full.txt with expanded content for deeper AI understanding.
   steps:
     - URL: /llms.txt
     - VERIFY: The page loads successfully and contains structured information about the site
-    - CODE: |
+    - description: Assert llms.txt is present and uses markdown headings
+      js: |
         const content = await page.textContent('body');
         if (!content || content.trim().length < 50) {
           throw new Error('llms.txt is missing or too short');
@@ -293,7 +294,8 @@ Also create /llms-full.txt with expanded content for deeper AI understanding.
   standard: AI-Discoverability
   steps:
     - URL: /robots.txt
-    - CODE: |
+    - description: Assert robots.txt does not block AI crawlers
+      js: |
         const content = await page.textContent('body');
         const blockedBots = ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'Google-Extended'];
         const blocked = blockedBots.filter(bot => {
@@ -312,7 +314,8 @@ Also create /llms-full.txt with expanded content for deeper AI understanding.
   standard: GEO-Citation-Worthiness
   steps:
     - URL: /
-    - CODE: |
+    - description: Assert the landing page has citable statistics
+      js: |
         const text = await page.textContent('main') || await page.textContent('body');
         // Check for specific numbers/statistics
         const hasNumbers = /\d+[%xX]|\$[\d,.]+|\d{1,3}(,\d{3})+|\d+\s*(users|customers|companies|teams|downloads)/i.test(text);

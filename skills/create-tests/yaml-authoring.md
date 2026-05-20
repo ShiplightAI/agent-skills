@@ -16,11 +16,11 @@ These best practices bridge the YAML language spec and the action catalog to hel
 - **DRAFT is a last resort.** Only use DRAFT when the locator is genuinely unknowable at authoring time. DRAFTs are slow (~5-10s each, AI resolution at runtime). Tests with too many DRAFTs are rejected by `validate_yaml_test`.
 - **VERIFY for assertions.** Use `VERIFY:` for all assertions. 
 - **URL for navigation.** Use `URL: /path` for navigation instead of `action: go_to_url`.
-- **CODE for scripting.** Use `CODE:` for network mocking, localStorage manipulation, page-level scripting. Not for clicks, assertions, or navigation.
+- **`js:` for scripting.** Use a `description:` + `js:` statement for network mocking, localStorage manipulation, page-level scripting. Not for clicks, assertions, or navigation.
 
 ### The `intent` field
 
-`intent` is the **intent** of the step — it defines _what_ the step should accomplish. The `action`/`locator` or `js` fields are **caches** of _how_ to do it. When a cache fails (stale locator, changed DOM), the AI agent uses `intent` to re-inspect the page and regenerate the action from scratch.
+`intent` is the **intent** of the step — it defines _what_ the step should accomplish. The `action`/`locator` fields are **caches** of _how_ to do it. When a cache fails (stale locator, changed DOM), the AI agent uses `intent` to re-inspect the page and regenerate the action from scratch. Structured actions self-heal this way; raw `js:` code runs verbatim and does not.
 
 Because `intent` drives self-healing, it must be specific enough for an agent to act on without any other context. Describe the **user goal**, not the DOM element — avoid element indices, CSS selectors, or positional references that break when the UI changes:
 
@@ -75,7 +75,7 @@ Always use `VERIFY:` shorthand — do not use `action: verify` directly.
 
 - **Use natural language (AI) conditions for DOM-based checks** (element visible, text present, page state). AI conditions self-heal against DOM changes; `js:` conditions are brittle and cannot auto-heal.
 - **Use `js:` conditions only for counter/state logic** — e.g., `js: counter++ < 10`, `js: retryCount < 3`. Never use `js:` for DOM inspection like `js: document.querySelector('.modal') !== null`.
-- If you need a JavaScript-based DOM check, use `CODE:` to evaluate it and store the result, or use `VERIFY:` with `js:` (which at least has AI fallback on failure).
+- If you need a JavaScript-based DOM check, use a `description: + js:` statement to evaluate it and store the result, or use `VERIFY:` with `js:` (which at least has AI fallback on failure).
 
 ### Waiting syntax
 
@@ -87,7 +87,7 @@ See the explicit wait policy in [test-design.md](test-design.md) for when to use
 ### General conventions
 
 - Put `intent` first in ACTION statements for readability
-- `xpath` is only needed when an ACTION has neither `locator` nor `js`.
+- `xpath` is only needed when an ACTION has no `locator`.
 - **Single-test vs Suite vs Parameters:**
   - **Single-test file** — one isolated test, no shared state
   - **Suite** — tests that have sequential dependencies (e.g., test A creates a file, test B consumes it). Each test in a suite still covers one journey — the suite just guarantees execution order and shares browser state. Do NOT use suites to bundle unrelated tests.

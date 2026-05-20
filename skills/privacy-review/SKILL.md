@@ -226,7 +226,8 @@ Generate a structured report saved to `shiplight/reports/privacy-review-{date}.m
       locator: "getByRole('button', { name: 'Search' })"
     - WAIT_UNTIL: Search results are displayed
       timeout_seconds: 15
-    - CODE: |
+    - description: Assert no email address appears in the URL
+      js: |
         const url = page.url();
         if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(url)) {
           throw new Error(`PII found in URL: ${url}`);

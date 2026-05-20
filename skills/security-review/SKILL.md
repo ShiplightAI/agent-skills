@@ -265,7 +265,8 @@ For each finding, provide:
       locator: "getByRole('button', { name: 'Sign in' })"
     - WAIT_UNTIL: User is logged in and dashboard is visible
       timeout_seconds: 15
-    - CODE: |
+    - description: Assert no auth tokens are stored in localStorage
+      js: |
         const keys = Object.keys(localStorage);
         const tokenKeys = keys.filter(k =>
           /token|jwt|auth|session|access/i.test(k)

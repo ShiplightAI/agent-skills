@@ -245,7 +245,8 @@ Generate a structured report saved to `shiplight/reports/performance-review-{dat
   severity: high
   standard: Core-Web-Vitals-LCP
   steps:
-    - CODE: |
+    - description: Set up an LCP observer before navigation
+      js: |
         // Set up LCP observer before navigation
         await page.evaluateOnNewDocument(() => {
           window.__lcp = 0;
@@ -257,7 +258,8 @@ Generate a structured report saved to `shiplight/reports/performance-review-{dat
     - URL: /
     - WAIT_UNTIL: Page has fully loaded including all images and content
       timeout_seconds: 30
-    - CODE: |
+    - description: Assert Largest Contentful Paint is under 2.5s
+      js: |
         const lcp = await page.evaluate(() => window.__lcp);
         if (lcp > 2500) {
           throw new Error(`LCP is ${lcp}ms, exceeds 2500ms threshold`);

@@ -241,7 +241,8 @@ Generate a structured report saved to `shiplight/reports/seo-review-{date}.md`:
   standard: Google-SEO-Guidelines
   steps:
     - URL: /
-    - CODE: |
+    - description: Assert the page title is present and 20-60 characters
+      js: |
         const title = await page.title();
         if (!title || title.trim() === '') {
           throw new Error('Page has no title');

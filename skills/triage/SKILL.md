@@ -39,7 +39,7 @@ Skip `/triage` when:
 - Authentication configured (storage state files) if the app requires login
 
 **Before editing any YAML test files**, you MUST:
-1. **Read the YAML spec resource** — call `ReadMcpResourceTool` with uri `shiplight://yaml-test-spec-v1.3.0` to learn the correct YAML syntax. Key rules: use `intent:` (NOT `description:`), understand DRAFT vs ACTION vs STEP statement types, and know the correct field names.
+1. **Read the YAML spec resource** — call `ReadMcpResourceTool` with uri `shiplight://yaml-test-spec-v1.3.0` to learn the correct YAML syntax. Key rules: use `intent:` for natural-language steps (`description:` is only the label on a `js:` code step), understand DRAFT vs ACTION vs STEP statement types, and know the correct field names.
 2. **Read the action-entity schema** — call `ReadMcpResourceTool` with uri `shiplight://schemas/action-entity` to learn available actions and their parameters.
 3. Optionally read the `/create-tests` skill for authoring best practices.
 
