@@ -126,6 +126,45 @@ curl -X PUT -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ---
 
+### Test Data
+
+#### List Test Data
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/test-data
+```
+
+Use `ids` to fetch specific files:
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "https://api.shiplight.ai/v1/test-data?ids=1,2,3"
+```
+
+**Response:** array of `{ organization_id, id, name, s3_path, created_at, updated_at, usage_count? }`
+
+#### Get Test Data
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/test-data/123
+```
+
+**Response:** `{ organization_id, id, name, s3_path, created_at, updated_at }`
+
+#### Download Test Data File
+
+Streams the file from S3 as `application/octet-stream`.
+
+```bash
+curl -L -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/test-data/123/download \
+  -o ./filename.ext
+```
+
+---
+
 ### Test Runs
 
 #### List Test Runs
@@ -294,6 +333,49 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 ```
 
 **Response:** `{ id, name, username, password, environmentId, loginConfig }`
+
+---
+
+### Forward Email Configs
+
+Forward email configs store the Mailgun forwarding address and extraction filters used by email-based login and verification flows. All responses are scoped to the organization associated with `SHIPLIGHT_API_TOKEN`.
+
+#### List Forward Email Configs
+
+Returns all forward email configs for the organization, ordered by `created_at` descending.
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/forward-email-configs
+```
+
+**Response:** array of `{ id, organization_id, name, forward_email, extraction_type, prompt, filter_from_email, filter_to_email, filter_subject, filter_body_contains, created_at, updated_at }`
+
+#### Get Forward Email Config
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  https://api.shiplight.ai/v1/forward-email-configs/1
+```
+
+**Response:** `{ id, organization_id, name, forward_email, extraction_type, prompt, filter_from_email, filter_to_email, filter_subject, filter_body_contains, created_at, updated_at }`
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | number | Forward email config ID |
+| `organization_id` | string | Organization that owns the config |
+| `name` | string | Human-readable config name |
+| `forward_email` | string | Mailgun forwarding inbox address |
+| `extraction_type` | string | Extraction mode, such as `verification_code`, `activation_link`, or `custom` |
+| `prompt` | string | Optional custom extraction prompt |
+| `filter_from_email` | string | Optional sender filter |
+| `filter_to_email` | string | Optional recipient filter |
+| `filter_subject` | string | Optional subject filter |
+| `filter_body_contains` | string | Optional body text filter |
+| `created_at` | string | ISO timestamp |
+| `updated_at` | string | ISO timestamp |
 
 ---
 
