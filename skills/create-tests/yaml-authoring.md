@@ -2,7 +2,7 @@
 
 ## YAML Format Reference
 
-Read the MCP resource `shiplight://yaml-test-spec-v1.3.0` for the full language spec (statement types, templates, variables, suites, hooks, parameterized tests).
+Read the MCP resource `shiplight://yaml-test-spec` for the full language spec (statement types, templates, variables, suites, hooks, parameterized tests).
 
 Read the MCP resource `shiplight://schemas/action-entity` for the full list of available actions and their parameters.
 

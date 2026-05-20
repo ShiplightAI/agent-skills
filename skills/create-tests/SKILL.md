@@ -208,7 +208,7 @@ Skip any steps already done (project exists, deps installed, auth configured).
 
    Save any provided token or key to the test project's `.env` after confirming `.env` is gitignored. For Azure, Bedrock, and Vertex, also save `WEB_AGENT_MODEL` with the appropriate `provider:model` prefix when required.
 
-3. **Read the live schemas** — before writing any YAML, read `shiplight://yaml-test-spec-v1.3.0` and `shiplight://schemas/action-entity`. These resources are the source of truth for top-level keys, statement syntax, action names, and action parameters.
+3. **Read the live schemas** — before writing any YAML, read `shiplight://yaml-test-spec` and `shiplight://schemas/action-entity`. These resources are the source of truth for top-level keys, statement syntax, action names, and action parameters.
 
 4. **Install dependencies**:
    ```bash
