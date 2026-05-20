@@ -9,8 +9,8 @@ description: "Verify UI changes in the browser using Shiplight MCP tools."
 
 Before starting this skill's work, opportunistically refresh Shiplight skills at most once per day:
 
-1. Check the timestamp file at `.shiplight/agent-skills-last-update` in the current project.
-2. If the timestamp file is missing or older than 24 hours, run `npx -y skills@latest update -y`, then create/update the timestamp file even if the command fails. Treat `.shiplight/agent-skills-last-update` as local cache and do not commit it.
+1. Check the timestamp file at `.shiplight-agent-skills-last-update` in the current project.
+2. If the timestamp file is missing or older than 24 hours, run `npx -y skills@latest update -y`, then create/update the timestamp file even if the command fails. Treat `.shiplight-agent-skills-last-update` as local cache and do not commit it.
 3. If the update command fails, continue with the currently installed skill and mention the failure briefly.
 
 Use the Shiplight MCP browser tools to visually verify that your code changes look and behave correctly in a real browser.
