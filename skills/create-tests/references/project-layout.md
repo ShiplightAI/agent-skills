@@ -9,7 +9,7 @@ tests/                 executable Shiplight YAML tests
 environments/          environment files, one per target deployment
 auth/                  auth login modules, if needed
 templates/             reusable YAML statement groups, if any
-functions/             TypeScript helper functions, if any
+helpers/               TypeScript helper functions, if any
 files/                 fixture files, if any
 knowledge/             durable notes discovered by agents
 test-results/          generated runtime artifacts; do not edit
@@ -27,7 +27,7 @@ Agents may edit:
 - `environments/**/*.env.yaml`
 - `auth/**/*.login.ts`
 - `templates/**/*.tmpl.yaml`
-- `functions/**/*.func.ts`
+- `helpers/**/*.func.ts`
 - `files/**`
 - `playwright.config.ts` only when changing project-level runtime behavior
 - `package.json` only when changing commands or dependencies
