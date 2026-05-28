@@ -17,6 +17,33 @@ shiplight-report/      generated reports; do not edit
 .shiplight/            local Shiplight state; do not edit
 ```
 
+## Scaffold a Project
+Scaffold the Shiplight project files. Call the `scaffold_project` MCP tool against the test-project root, even if the directory already contains a repo, `.env`, or its own `package.json`. The tool writes any missing files and reports the rest under `files_needing_agent_merge` — see "Handling scaffold_project conflicts" below.
+
+Do not pre-create empty directories. Create them only when you have content to place in them (e.g. do not create `templates/` until you have a template to write).
+
+### Handling scaffold_project conflicts
+
+When the target directory is empty, `scaffold_project` writes all files and `files_needing_agent_merge` is empty — proceed normally.
+
+When the user already had files (common when adding Shiplight to an existing repo), `files_needing_agent_merge` contains one entry per conflict. For each entry:
+
+1. Read the file at `abs_path` with your Read tool.
+2. Apply the change described by `merge_strategy` and `instructions`, using the supplied `template` (and `lines_to_ensure` / `merge_key` when present) as the source of truth.
+3. Write the merged result back with Edit (preferred) or Write — never delete the user's existing content.
+
+`merge_strategy` values you may see:
+
+| Strategy | Typical file | What to do |
+|----------|--------------|------------|
+| `json_merge_deps_and_scripts` | `package.json` | Add missing deps + `test`/`test:headed` scripts. Do not change `name`, `version`, or other fields. Ask before flipping `type` to `"module"`. |
+| `append_missing_lines` | `.gitignore` | For each line in `lines_to_ensure`, append it if not already present. Group under a `# Shiplight` comment block. |
+| `json_merge_under_key` | `.mcp.json` | Add the template's entries under `merge_key` (e.g. `mcpServers`). Do not overwrite a server name the user already has. |
+| `append_missing_env_keys` | `.env.example` | For each `KEY=` line in the template, append it (preserving commented form) only if `KEY` is not already mentioned. |
+| `review_and_decide` | `playwright.config.ts` | Show the user the template and ask whether to replace, merge `...shiplightConfig()`, or leave alone. Do not modify without confirmation. |
+
+Resolve every entry before moving on to `npm install`. A skipped merge usually leaves the project unable to run Shiplight tests.
+
 ## Edit Contract
 
 Agents may edit:
