@@ -35,16 +35,80 @@ If the user provides a token, append it to the project's `.env` file as `SHIPLIG
 
 | Error | Action |
 |-------|--------|
-| 400 Bad Request | Fix the request body, IDs, or query parameters |
+| 400 Bad Request | Fix the request body, IDs, or query parameters. All validation errors come back as 400 — there is no separate 422. |
 | 401 Unauthorized | Token is missing, invalid, expired, or for the wrong Nova environment |
-| 403 Forbidden | Token lacks the required permission |
+| 403 Forbidden | Token lacks the required permission, the S3 URI points at a bucket other than the test-results bucket, or the URI key's first segment is not your organization ID |
 | 404 Not Found | Run, result, or artifact was not found for this organization |
-| 422 Validation | Show the validation message and correct the payload |
 | 500 Server Error | Retry only if the operation is idempotent; otherwise report the failure |
 
 ## REST API
 
 Base URL: `$SHIPLIGHT_API_URL`
+
+### List Test Runs
+
+Returns recent runs for the authenticated organization as a bare array (matches the v1 shape), ordered by record creation time, newest first. Note: read endpoints (list, detail) live under `/v1/test-runs`; the write endpoints (create / complete / artifact uploads) below stay under `/v1/local-runs` for compatibility with existing SDK/CLI clients.
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "$SHIPLIGHT_API_URL/v1/test-runs?limit=10"
+```
+
+**Query parameters:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `trigger` | string | Filter by trigger (e.g. `local_cli`, `gha_runner`) |
+| `result` | string | Filter by overall run result. Lowercase values only: `passed`, `failed`, or `pending` (in-flight). |
+| `repo` | string | Filter by repository (`org/repo`) |
+| `branch` | string | Filter by branch |
+| `from` | string | ISO timestamp lower bound (inclusive) on `createdAt` |
+| `to` | string | ISO timestamp upper bound (inclusive) on `createdAt` |
+| `page` | number | Page number (default `1`) |
+| `pageSize` | number | Page size (default `20`) |
+| `limit` | number | Alias for `pageSize`. If both are sent, `pageSize` wins. |
+
+**Response:** array of run rows — `{ id, status, result, trigger, branch, commitSha, repo, target, startTime, endTime, totalTestCount, passedCount, flakyCount, failedCount, skippedCount, metadata, ... }`.
+
+### Get Test Run
+
+Returns the run together with its per-result rows in a single response. Equivalent to v1's `/run-results/:id`.
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "$SHIPLIGHT_API_URL/v1/test-runs/42"
+```
+
+**Response:**
+
+```json
+{
+  "testRun": {
+    "id": 42,
+    "status": "finished",
+    "result": "passed",
+    "trigger": "local_cli",
+    "branch": "main",
+    "totalTestCount": 1,
+    "passedCount": 1,
+    "failedCount": 0
+  },
+  "testCaseResults": [
+    {
+      "id": 101,
+      "testRunId": 42,
+      "result": "passed",
+      "reportS3Uri": "s3://shipyard-test-results/org-1/tests/_local/test-results/101/report.json",
+      "videoS3Uri": "s3://...",
+      "traceS3Uri": "s3://..."
+    }
+  ]
+}
+```
+
+`400` if `:id` is not a numeric run ID; `404` if the run does not exist for this organization.
+
+All `testCaseResults` for the run are returned in a single response — there is no result-level pagination. Runs with hundreds of test cases produce correspondingly large payloads.
 
 ### Create Test Run
 
@@ -236,6 +300,19 @@ Response:
 }
 ```
 
+### Download S3 File
+
+Proxy download for any artifact referenced by an `s3://` URI inside a result row or a nested report (e.g. step-level `screenshot_s3_path`, `messages_s3_path`). Use this when the artifact isn't one of the four well-known types covered by `artifact-url`.
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "$SHIPLIGHT_API_URL/v1/s3/file?uri=s3://shipyard-test-results/<org-id>/tests/_local/test-results/<id>/report.json"
+```
+
+**Query:** `uri` (string, required) — S3 URI taken from a result row or a parsed report. Must point at the Shiplight Cloud test-results bucket and the key's first segment must equal your organization ID. Other buckets and cross-org keys return `403`. Path traversal patterns (`..`, `//`, double-encoded segments) return `400`.
+
+**Response:** raw file contents streamed back with `Content-Disposition: attachment` — this proxy is for API/SDK consumers, never a browser renderer, so even text artifacts won't render inline. The `Content-Type` is set from a small allow-list (`video/webm`, `application/zip`, `application/json`, `image/png`, `image/jpeg`, `text/plain` for `.txt` / `.log`); any other extension — including `.html` and `.svg` — falls back to `application/octet-stream` as defense against inline-rendering attacks on the `apps/api` origin. For binary artifacts, save with `curl -o <output_file>`.
+
 ## Workflows
 
 ### Publish a Run
@@ -253,3 +330,13 @@ Response:
 1. Call `artifact-url` with `type=report`, `video`, `trace`, or `screenshot`.
 2. Download from the returned signed URL before it expires.
 3. For binary artifacts, save with an appropriate filename extension.
+
+### Inspect a Run's Results
+
+1. `GET /v1/test-runs?limit=10&result=failed` (or other filters) to find recent runs.
+2. `GET /v1/test-runs/{testRunId}` to load `testRun` + `testCaseResults` in one round-trip.
+3. For each failed `testCaseResult`, fetch the report:
+   - `GET /v1/local-runs/{testRunId}/results/{testCaseResultId}/artifact-url?type=report` and download the JSON, OR
+   - `GET /v1/s3/file?uri=<reportS3Uri>` to stream it directly.
+4. Parse the report JSON and pull any nested `s3://` URIs (typically reporter-defined fields like `screenshot_s3_path`, `messages_s3_path`). The report schema is owned by whichever CLI/runner uploaded the report, not by this API.
+5. Stream each nested artifact via `GET /v1/s3/file?uri=…`. The proxy enforces that the URI's bucket is the Shiplight test-results bucket and the key's first path segment is your organization ID, and serves the body as a forced download (see Download S3 File above for headers and content-type behavior).
