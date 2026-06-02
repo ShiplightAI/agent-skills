@@ -47,7 +47,7 @@ Base URL: `$SHIPLIGHT_API_URL`
 
 ```bash
 curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
-  "$SHIPLIGHT_API_URL/v1/test-runs?limit=10"
+  "$SHIPLIGHT_API_URL/v1/test-runs?pageSize=10"
 ```
 
 Returns a bare array ordered by `createdAt` descending.
@@ -62,7 +62,6 @@ Returns a bare array ordered by `createdAt` descending.
 | `to` | string | ISO timestamp upper bound (inclusive) on `createdAt` |
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
-| `limit` | number | Alias for `pageSize`; `pageSize` wins if both set |
 
 **Response:** array of `{ id, status, result, trigger, branch, commitSha, repo, target, startTime, endTime, totalTestCount, passedCount, flakyCount, failedCount, skippedCount, metadata, ... }`.
 
@@ -117,7 +116,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 
 ### Inspect a Run's Results
 
-1. `GET /v1/test-runs?limit=10&result=failed` (or other filters) to find recent failures.
+1. `GET /v1/test-runs?pageSize=10&result=failed` (or other filters) to find recent failures.
 2. `GET /v1/test-runs/{testRunId}` to load `testRun` + `testCaseResults`.
 3. For each failed `testCaseResult`, `GET /v1/s3/file?uri=<reportS3Uri>` to fetch the report JSON.
 4. Parse the report and stream any nested `s3://` URIs via `GET /v1/s3/file?uri=…`. Report schema is reporter-defined; expect arbitrary fields containing `s3://` values.
