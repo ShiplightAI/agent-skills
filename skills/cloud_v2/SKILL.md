@@ -1,6 +1,6 @@
 ---
 name: cloud_v2
-description: "Read Shiplight Cloud v2/Nova test results: list runs, fetch run details, and stream artifact files."
+description: "Read Shiplight Cloud v2/Nova test results: list runs, fetch run details, and download artifacts."
 ---
 
 # Shiplight Cloud v2
@@ -54,7 +54,6 @@ Returns a bare array ordered by `createdAt` descending.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `trigger` | string | Exact match on trigger (`local_cli`, `gha_runner`, …) |
 | `result` | string | Exact match on overall run result. Lowercase: `passed`, `failed`, `pending` |
 | `repo` | string | Exact match on `org/repo` |
 | `branch` | string | Exact match on branch |
@@ -100,6 +99,55 @@ Returns the run plus every `testCaseResult` row — no result-level pagination.
 ```
 
 `400` if `:id` is not numeric; `404` if the run does not exist.
+
+### List Test Results by File
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "$SHIPLIGHT_API_URL/v1/test-results?repo=org/repo&file=tests/checkout.spec.ts&pageSize=10"
+```
+
+Returns a bare array ordered by result `createdAt` descending. Each row carries the test result fields plus a nested `testRun` with parent context (branch, commit, repo).
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `repo` | string | **Required.** Exact match on `org/repo`. |
+| `file` | string | **Required.** Exact match on the test file path stored on the result row. |
+| `result` | string | Lowercase: `passed`, `failed`, `pending` |
+| `branch` | string | Exact match on branch |
+| `from` | string | ISO timestamp lower bound (inclusive) on result `createdAt` |
+| `to` | string | ISO timestamp upper bound (inclusive) on result `createdAt` |
+| `page` | number | Default `1` |
+| `pageSize` | number | Default `20` |
+
+```json
+[
+  {
+    "id": 101,
+    "testRunId": 42,
+    "file": "tests/checkout.spec.ts",
+    "testName": "checkout succeeds",
+    "status": "finished",
+    "result": "passed",
+    "startTime": "2026-05-27T10:00:01.000Z",
+    "endTime": "2026-05-27T10:00:10.000Z",
+    "errorMessage": null,
+    "reportS3Uri": "s3://shipyard-test-results/org-1/tests/_local/test-results/101/report.json",
+    "videoS3Uri": "s3://...",
+    "traceS3Uri": "s3://...",
+    "createdAt": "2026-05-27T10:00:11.000Z",
+    "testRun": {
+      "id": 42,
+      "branch": "main",
+      "commitSha": "abc1234",
+      "repo": "org/repo",
+      "createdAt": "2026-05-27T10:00:00.000Z"
+    }
+  }
+]
+```
+
+`400` if `repo` or `file` is missing.
 
 ### Download S3 File
 
