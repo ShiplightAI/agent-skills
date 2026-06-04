@@ -29,6 +29,50 @@ Authorization: Bearer $SHIPLIGHT_API_TOKEN
 
 If the user provides a token, append it to the project's `.env` file as `SHIPLIGHT_API_TOKEN=<token>` and tell them to keep `.env` out of git.
 
+## CI Integration
+
+In CI, use the `shiplight report` CLI instead of calling the REST API below directly — it discovers the test report in `./shiplight-report`, presigns and uploads every artifact, and completes the run for you. Reach for the raw REST calls only for custom integrations the CLI doesn't cover (non-Shiplight test frameworks, bespoke pipelines).
+
+```yaml
+- name: Run E2E tests
+  working-directory: tests/e2e
+  run: npx shiplight test
+
+- name: Upload results to Shiplight
+  if: always()            # upload even when tests fail
+  working-directory: tests/e2e
+  run: npx shiplight report
+```
+
+`shiplight test` does **not** upload on its own. `shiplight report` uploads to cloud.
+
+Always use `if: always()` so results upload even when tests fail; otherwise a red run produces no cloud report.
+
+### On Shiplight CI runners 
+
+One-time setup: install the Shiplight GitHub App on the repo/org, then have an org owner enable runners in Org Settings (<https://nova.shiplight.ai/org?tab=settings>).
+
+Change `runs-on` in the workflow to a `shiplight-*` host type:
+```yaml
+  runs-on: shiplight-small
+```
+
+**No env config is needed**; `npx shiplight report` works as-is. Chromium + Playwright are preinstalled, so do not run `npx playwright install`.
+
+### On any other runner (GitHub-hosted, GitLab, local, etc.)
+
+Get an org API token from <https://nova.shiplight.ai/api-tokens> and store it as a CI secret:
+
+```yaml
+- name: Upload results to Shiplight
+  if: always()
+  working-directory: tests/e2e
+  env:
+    SHIPLIGHT_REPORT_TO_CLOUD: '1'
+    SHIPLIGHT_API_TOKEN: ${{ secrets.SHIPLIGHT_API_TOKEN }}
+  run: npx shiplight report
+```
+
 ## Error Handling
 
 | Status | Action |
