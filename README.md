@@ -93,7 +93,7 @@ npx skills add ShiplightAI/agent-skills --list
 npx skills update
 ```
 
-The `/verify`, `/create-tests`, `/triage`, and `/cloud` skills also include an opportunistic daily update check. When a coding agent uses one of those skills, the skill asks the agent to run `npx -y skills@latest update -y` at most once every 24 hours, using `.shiplight/agent-skills-last-update` as the project-local attempt timestamp. Treat this file as local cache and do not commit it.
+The `/verify` and `/create-tests` skills also include an opportunistic daily update check. When a coding agent uses one of those skills, the skill asks the agent to use `.shiplight-agent-skills-last-update` as the project-local attempt timestamp. On first use, if the file does not exist yet, the agent should create it and skip the update so a newly installed project does not pay for a second install. After that, the agent should run `npx -y skills@latest update -y` at most once every 24 hours. Treat this file as local cache and do not commit it.
 
 ## Links
 

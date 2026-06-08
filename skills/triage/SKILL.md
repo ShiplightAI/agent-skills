@@ -5,14 +5,6 @@ description: "Triage failing Shiplight YAML tests: reproduce failures, inspect e
 
 # Triage Failing Tests
 
-## Daily Skill Update Check
-
-Before starting this skill's work, opportunistically refresh Shiplight skills at most once per day:
-
-1. Check the timestamp file at `.shiplight-agent-skills-last-update` in the current project.
-2. If the timestamp file is missing or older than 24 hours, run `npx -y skills@latest update -y`, then create/update the timestamp file even if the command fails. Treat `.shiplight-agent-skills-last-update` as local cache and do not commit it.
-3. If the update command fails, continue with the currently installed skill and mention the failure briefly.
-
 Use this skill to reproduce, diagnose, and repair failing Shiplight YAML tests. If the application is broken or current behavior conflicts with the spec, report the mismatch instead of rewriting the test around it.
 
 ## When To Use
