@@ -17,7 +17,7 @@ Examples:
 
 Use `knowledge/` for operational notes discovered while working.
 
-Use `specs/context.md` for project-wide testing context such as app profile, risk profile, target environments, durable data strategy, and broad scope decisions.
+Use `specs/context.md` for project-wide testing context such as app profile, risk profile, target URLs or deployments, durable data strategy, and broad scope decisions.
 
 Use `specs/tests/*.md` for feature intent, expected behavior, journeys, assertions, and coverage decisions.
 
@@ -43,7 +43,7 @@ Knowledge is not append-only. If new user input, app behavior, or test work prov
 
 ## When To Read
 
-Before starting a task, check `knowledge/` for files relevant to the app area, environment, auth, data, or tooling you are about to touch.
+Before starting a task, check `knowledge/` for files relevant to the app area, target URL or deployment, auth, data, or tooling you are about to touch.
 
 ## Session-Close Reflection
 

@@ -6,7 +6,7 @@ Use this phased workflow for broad requests such as creating a new test project,
 Phase 1: Discover  -> specs/context.md
 Phase 2: Specify   -> specs/tests/*.md
 Phase 3: Plan      -> implementation plan in the relevant spec(s)
-Phase 4: Implement -> tests/*.test.yaml, environments, auth, helpers
+Phase 4: Implement -> tests/*.test.yaml, auth setup, helpers, fixtures
 Phase 5: Verify And Reflect -> updated specs, context, and knowledge
 ```
 
@@ -14,7 +14,7 @@ For narrow requests, such as fixing one failing test, use the relevant task guid
 
 ## Phase 1: Discover
 
-Understand the application, user goals, risks, target environment, auth needs, and data strategy.
+Understand the application, user goals, risks, target deployment, auth needs, and data strategy.
 
 Before asking questions, scan available context:
 
@@ -33,7 +33,7 @@ Write or update `specs/context.md` with:
 - Testing scope: in-scope and out-of-scope areas
 - User roles: roles and permission levels to cover
 - Data strategy: how test data is created and cleaned up
-- Environment: target deployments, auth method, special setup
+- Targets: base URLs, auth method, special setup
 - Known facts and decisions: durable preferences and constraints
 - Open questions: unresolved or stale questions
 
@@ -59,7 +59,7 @@ Add or update the `Implementation Plan` section in the relevant spec(s):
 
 - Test files to create or update
 - Implementation order
-- Environment and auth to use
+- Base URL and auth to use
 - Data setup and cleanup strategy
 - Flakiness risks and mitigations
 
@@ -70,8 +70,8 @@ Order work by dependencies first, then priority, then risk.
 Set up or update project files as needed:
 
 1. Scaffold the Shiplight project files if neccessary.
-2. Create or update `environments/*.env.yaml`.
-3. Create or reuse auth login modules when needed.
+2. Record shared base URL, account-role details, auth-setup details, or required env vars in `specs/context.md` or `knowledge/` when needed.
+3. Create or reuse shared auth setup, per-test auth scripts, or another existing Playwright-native auth setup when needed.
 4. Read `shiplight://yaml-test-spec` and `shiplight://schemas/action-entity`.
 5. Walk the app in a browser and capture real locators.
 6. Write focused YAML tests.

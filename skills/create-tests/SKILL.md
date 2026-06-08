@@ -1,6 +1,6 @@
 ---
 name: create-tests
-description: "Create, update, and repair local Shiplight YAML E2E tests. Use for Shiplight test projects, including project setup, specs, environments, auth fixtures, YAML implementation, validation, and test maintenance."
+description: "Create, update, and repair local Shiplight YAML E2E tests. Use for Shiplight test projects, including project setup, specs, auth setup, YAML implementation, validation, and test maintenance."
 ---
 
 # Create Shiplight Tests
@@ -12,7 +12,7 @@ Use this skill when the user wants to:
 - Create a new local Shiplight test project
 - Add YAML tests for a web application
 - Update or fix existing Shiplight YAML tests
-- Set up or repair environments, accounts, or auth fixtures
+- Set up or repair target URLs, accounts, or auth setup
 - Plan what product behavior should be tested
 
 ## Daily Skill Update Check
@@ -34,14 +34,15 @@ If the root is not clear, ask the user to confirm it before creating or moving f
 Shiplight test projects use this layout:
 
 ```text
-specs/context.md       project-level app, risk, data, and environment context
+specs/context.md       project-level app, risk, data, and target-deployment context
 specs/tests/           Markdown specs, each covering a feature or journey group
 tests/                 executable Shiplight YAML tests
-environments/          environment files, one per target deployment
-auth/                  auth login modules, if needed
+playwright.config.ts   project-level Playwright config, shared auth, and runtime defaults
+auth.setup.ts          shared-account Playwright auth setup, if needed
+auth/                  optional auth helpers or per-test login scripts
 templates/             reusable YAML statement groups, if any
 helpers/               TypeScript helper functions, if any
-files/                 fixture files, if any
+fixtures/              fixture files, if any
 knowledge/             durable notes discovered by agents
 test-results/          generated runtime artifacts; do not edit
 shiplight-report/      generated reports; do not edit
@@ -82,7 +83,7 @@ On every invocation:
 | New project or broad planning | `references/workflow.md`, `references/project-layout.md`, `references/test-design-guide.md` |
 | Writing new tests | `references/new-tests.md`, `references/test-design-guide.md`, `references/test-implementation-guide.md` |
 | Updating or fixing tests | `references/updating-tests.md`, `references/test-design-guide.md`, `references/test-implementation-guide.md` |
-| Auth fixtures and login | `references/auth.md` |
+| Auth setup and login | `references/auth.md` |
 | YAML syntax or actions | `references/test-implementation-guide.md`; also read `shiplight://yaml-test-spec` and `shiplight://schemas/action-entity` before writing YAML |
 
 ## Core Rules

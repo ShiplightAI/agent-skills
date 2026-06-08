@@ -1,6 +1,11 @@
 # Auth
 
-This guide explains how to reason about authentication, define accounts, and write login modules.
+This guide explains the preferred authentication patterns for local Shiplight test projects and when to use each one.
+
+These are recommended defaults, not the only possible Playwright auth approaches.
+Use them unless the project already has a different Playwright-native auth setup
+that works through normal Playwright config, setup projects, `use`, or
+`storageState`.
 
 ## Does A Test Need Auth?
 
@@ -11,93 +16,138 @@ Before writing a test, determine whether it requires an authenticated session:
 
 If unclear, infer from app behavior or ask the user. Document the answer in the spec before writing YAML.
 
-## Accounts In Environment Files
+## Choose The Auth Pattern
 
-Accounts are defined inside `environments/*.env.yaml`.
+Start with one of these two approaches:
 
-Each account entry contains:
+### Shared Account (Most Common)
 
-- `username`: actual account email or username; commit as-is if not sensitive
-- `password`: env var name holding the password
-- `2fa_secret`: optional env var name holding the 2FA secret
+Use this when the whole run can share one identity. Prefer this pattern unless tests in the same run must use different users.
 
-```yaml
-name: staging
-url: https://staging.example.com
+Create a Playwright setup project that logs in once, saves `storageState`, and make the main test project depend on it.
 
-accounts:
-  - username: member@example.com
-    password: STAGING_MEMBER_PASSWORD
-  - username: admin@example.com
-    password: STAGING_ADMIN_PASSWORD
-    2fa_secret: STAGING_ADMIN_2FA_SECRET
-```
-
-## Adding A New Account
-
-When a test needs an account not yet listed:
-
-1. Infer or clarify the account type needed.
-2. Add the account entry to the environment YAML with username and env var references.
-3. Tell the user which variables to add to `.env`.
-
-Do not ask for or commit actual passwords, API keys, tokens, cookies, or one-time codes.
-
-## Auth Login Modules
-
-An auth login module is a TypeScript file under `auth/` that exports a `login(args)` function. It performs login, caches browser session state under `.auth/`, and returns the state file path.
-
-File naming:
-
-```text
-auth/<environment-or-app>.login.ts
-```
-
-Always read `auth/` before creating anything. If a login module already exists for the same app or environment, reuse it and pass different account args.
-
-Create a new module only when no suitable module exists.
-
-## Login Module Contract
+Example:
 
 ```ts
-export async function login(args: Record<string, unknown> = {}): Promise<string> {
-  const username = args.username as string;
-  const rawPassword = args.password as string;
-  const password = process.env[rawPassword] ?? rawPassword;
-  // perform login and return cached storage state path
-}
+// auth.setup.ts
+import { test as setup } from "@playwright/test";
+
+setup("login", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(process.env.USERNAME!);
+  await page.getByLabel("Password").fill(process.env.PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL("/dashboard");
+  await page.context().storageState({ path: ".auth/default.json" });
+});
+```
+
+```ts
+// playwright.config.ts
+export default defineConfig({
+  ...shiplightConfig(),
+  projects: [
+    { name: "auth", testMatch: "auth.setup.ts" },
+    {
+      name: "default",
+      dependencies: ["auth"],
+      use: {
+        baseURL: "https://staging.example.com",
+        storageState: ".auth/default.json",
+      },
+    },
+  ],
+});
 ```
 
 Key points:
 
-- `args.password` is the env var name, not the secret value.
-- The module resolves secrets from `process.env`.
-- State files are written under `.auth/`, which must be gitignored.
-- Cached state should be reused when still fresh.
+- Tests do not declare an auth block when shared auth is configured; they inherit the authenticated `storageState`.
+- This is the default recommendation for one-account suites.
+- If the shared account can vary by environment or role, select it at runtime with env vars rather than creating per-test auth blocks.
 
-## Referencing Auth In YAML
+### Per-Test Auth (Advanced)
 
-Use `use.account`:
+Use this only when different tests in the same run must log in as different users.
 
-```yaml
-# Spec: specs/tests/files.md
-goal: Workspace member can view files
-base_url: https://staging.example.com
-use:
-  account:
-    auth: auth/staging.login.ts
-    args:
-      username: member@example.com
-      password: STAGING_MEMBER_PASSWORD
+Each test declares its auth script and optional args inline. The auth script exports `login(args)`, performs the login flow, manages `storageState` caching, and returns the path to a storage-state JSON file.
 
-statements:
-  - URL: /files
+Example:
+
+```ts
+// auth.login.ts
+import { chromium } from "@playwright/test";
+import * as fs from "fs";
+import * as path from "path";
+
+export async function login(args: Record<string, unknown>): Promise<string> {
+  const stateFile = path.join(".auth", `${args.username}.json`);
+
+  if (fs.existsSync(stateFile)) return stateFile;
+
+  const browser = await chromium.launch();
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(args.username as string);
+  await page.getByLabel("Password").fill(args.password as string);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL("/dashboard");
+
+  fs.mkdirSync(path.dirname(stateFile), { recursive: true });
+  await context.storageState({ path: stateFile, indexedDB: true });
+  await browser.close();
+
+  return stateFile;
+}
 ```
 
-Different tests can use different accounts by passing different args to the same login module.
+```yaml
+use:
+  auth: ./auth.login.ts
+  args:
+    username: admin@example.com
+    password: "{{ADMIN_PASSWORD}}"
+goal: Admin can manage users
+statements:
+  - URL: /admin/users
+  - VERIFY: User management page is visible
+```
+
+Key points:
+
+- The `args` object is passed directly to `login(args)`.
+- The auth script can accept any fields the login flow needs, such as usernames, passwords, TOTP secrets, org IDs, or API tokens.
+- The auth script owns caching and expiration policy for `.auth/*`.
+- Tests without `use.auth` run with the default context. If shared auth is configured, they inherit that `storageState`; otherwise they run unauthenticated.
+
+## File Placement
+
+Do not assume auth files must live under `auth/`.
+
+Common choices:
+
+- `playwright.config.ts` at the project root when shared auth configures setup projects or default `storageState`
+- `auth.setup.ts` at the project root for shared-account setup
+- `auth.login.ts` at the project root for per-test auth
+- `auth/*.login.ts` when the project has several reusable auth helpers
+
+Reuse existing auth files before creating new ones.
+
+## Account And Secret Documentation
+
+Store durable account-role facts in `specs/context.md` or `knowledge/`:
+
+- Which auth pattern or Playwright-native auth setup the project uses
+- Which roles exist
+- Which tests require which roles
+- Which env vars must be present in `.env`
+
+Do not commit actual passwords, API keys, tokens, cookies, or one-time codes.
 
 ## Secrets Policy
 
-Never commit real credentials to specs, tests, fixtures, environment files, or docs.
+Never commit real credentials to specs, tests, fixtures, or docs.
 
-Credentials belong in `.env`. Environment YAML files and YAML tests contain only env var names.
+Credentials belong in `.env`. Specs, notes, config, and YAML may reference env vars or templated secret placeholders, but not raw secret values.

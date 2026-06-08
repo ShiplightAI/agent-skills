@@ -16,8 +16,8 @@ Describe the users, account types, permission levels, or auth states covered.
 
 ## Starting Point
 
-- Environment: <environment name from environments/*.env.yaml, not a URL>
-- Auth: <none, anonymous visitor OR logged in as role/account fixture>
+- Base URL: <target URL for this spec>
+- Auth: <none, anonymous visitor OR logged in as role/account via shared auth, per-test auth, or existing project auth setup>
 
 ## Preconditions
 

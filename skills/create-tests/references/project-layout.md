@@ -3,14 +3,15 @@
 Shiplight test projects use committed specs and YAML tests, plus local generated state. All paths below are relative to the Shiplight test project root.
 
 ```text
-specs/context.md       project-level app, risk, data, and environment context
+specs/context.md       project-level app, risk, data, and target-deployment context
 specs/tests/           Markdown specs, each covering a feature or journey group
 tests/                 executable Shiplight YAML tests
-environments/          environment files, one per target deployment
-auth/                  auth login modules, if needed
+playwright.config.ts   project-level Playwright config, shared auth, and runtime defaults
+auth.setup.ts          shared-account Playwright auth setup, if needed
+auth/                  optional auth helpers or per-test login scripts
 templates/             reusable YAML statement groups, if any
 helpers/               TypeScript helper functions, if any
-files/                 fixture files, if any
+fixtures/              fixture files, if any
 knowledge/             durable notes discovered by agents
 test-results/          generated runtime artifacts; do not edit
 shiplight-report/      generated reports; do not edit
@@ -51,12 +52,14 @@ Agents may edit:
 - `specs/context.md`
 - `specs/tests/**/*.md`
 - `tests/**/*.test.yaml`
-- `environments/**/*.env.yaml`
+- `playwright.config.ts`
+- `auth.setup.ts`
+- `*.login.ts`
 - `auth/**/*.login.ts`
+- existing project auth helpers referenced by `playwright.config.ts` or YAML `use.auth`
 - `templates/**/*.tmpl.yaml`
 - `helpers/**/*.func.ts`
-- `files/**`
-- `playwright.config.ts` only when changing project-level runtime behavior
+- `fixtures/**`
 - `package.json` only when changing commands or dependencies
 
 Agents must not edit:

@@ -2,20 +2,19 @@
 
 Use this workflow when adding new Shiplight YAML tests.
 
-## 1. Determine The Environment
+## 1. Determine The Target URL
 
-Every test targets a named environment. Environments are defined in `environments/*.env.yaml`.
+Every test targets a specific deployment or base URL.
 
-If a matching environment file exists, reuse it. If not, create one:
+If a matching target URL is already documented in nearby tests, `specs/context.md`, or `knowledge/`, reuse it. If not, record it in the relevant spec or `specs/context.md` before writing YAML:
 
 ```yaml
-name: staging
-url: https://staging.example.com
+base_url: https://staging.example.com
 ```
 
-The `url` field becomes the YAML test `base_url`.
+The confirmed URL becomes the YAML test `base_url`.
 
-If the target environment is ambiguous, ask the user. Do not silently switch environments to make a test pass.
+If the target deployment is ambiguous, ask the user. Do not silently switch URLs to make a test pass.
 
 ## 2. Determine Auth
 
@@ -34,10 +33,13 @@ If auth is not required, document this in the spec:
 
 If auth is required:
 
-1. List available accounts from the environment YAML `accounts` key.
-2. Ask the user which account or role to use if it is not obvious.
-3. If a new account is needed, add the username and env var references to the environment YAML. Do not ask for or commit the password value.
-4. Check `auth/` for an existing login module. Reuse it when possible; create one only when needed.
+1. Check whether the project already has a working Playwright-native auth setup. Reuse it when it matches the identities the tests need.
+2. If the project does not already have a suitable auth setup, prefer shared auth unless different tests in one run need different identities.
+3. List available roles, accounts, and required env vars from `specs/context.md`, `knowledge/`, relevant specs, or existing auth files.
+4. Ask the user which account or role to use if it is not obvious.
+5. If shared auth is appropriate, check for an existing `auth.setup.ts` and matching `playwright.config.ts` setup. Reuse or extend it when possible.
+6. If per-test auth is required, check for an existing `*.login.ts` auth script. Reuse it when possible; create one only when needed.
+7. If a new account or secret reference is needed, record the username or role plus env var names in `specs/context.md` or `knowledge/`. Do not ask for or commit the password value.
 
 See `auth.md`.
 
@@ -53,7 +55,7 @@ The spec must include:
 
 - Goal
 - User roles
-- Environment
+- Base URL
 - Auth
 - Journeys or variants
 - Expected results
@@ -70,7 +72,7 @@ Do not proceed to implementation while the relevant spec is `Draft`, unless the 
 
 Once the spec is ready:
 
-1. Open a Shiplight MCP browser session at the target environment.
+1. Open a Shiplight MCP browser session at the target URL.
 2. Walk through the exact flow described in the spec.
 3. Capture locators for interactive elements.
 4. Create focused YAML tests under `tests/`.
@@ -86,9 +88,9 @@ statements:
   - URL: /login
 ```
 
-Use the url from the matching environment file as `base_url`.
+Use the confirmed target URL as `base_url`.
 
-If the test requires auth, add `use.account`. See `auth.md`.
+If the project uses shared auth, tests usually need no auth block. If the test requires per-test auth, add `use.auth` and optional `args`. If the project already has another Playwright-native auth pattern wired through config or `storageState`, follow that existing pattern instead of rewriting it just to match the examples. See `auth.md`.
 
 Do not write statements from memory. Always walk the app first.
 
