@@ -48,11 +48,11 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "$SHIPLIGHT_API_URL/v1/test-runs?pageSize=10"
 ```
 
-Returns a bare array ordered by `createdAt` descending.
+Ordered by `createdAt` descending.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `result` | string | Exact match on overall run result. Lowercase: `passed`, `failed`, `pending` |
+| `result` | string | Exact match on overall run result: `passed`, `failed`, `pending` |
 | `repo` | string | Exact match on `org/repo` |
 | `branch` | string | Exact match on branch |
 | `from` | string | ISO timestamp lower bound (inclusive) on `createdAt` |
@@ -109,8 +109,8 @@ Results for one file across runs, newest first.
 | Param | Type | Description |
 |-------|------|-------------|
 | `repo` | string | **Required.** Exact match on `org/repo`. |
-| `file` | string | **Required.** Exact match on the test file path stored on the result row. |
-| `result` | string | Per-row result. Lowercase: `passed`, `failed`, `timedout`, `flaky`, `skipped`, `pending` |
+| `file` | string | **Required.** Exact match on the test file path. |
+| `result` | string | Per-row result: `passed`, `failed`, `timedout`, `flaky`, `skipped`, `pending` |
 | `branch` | string | Exact match on branch |
 | `from` | string | ISO timestamp lower bound (inclusive) on result `createdAt` |
 | `to` | string | ISO timestamp upper bound (inclusive) on result `createdAt` |
@@ -137,8 +137,6 @@ Results for one file across runs, newest first.
 ]
 ```
 
-Per-row `status` ∈ `{running, finished}`; `errorMessage` and S3 URIs may be `null` — skip rows missing the URI you need.
-
 ### List Failing Tests
 
 ```bash
@@ -156,8 +154,6 @@ For each unique `(file, testName)` in the window, returns its latest row when th
 | `to` | string | ISO timestamp upper bound (inclusive) on run `createdAt`. Defaults to `now` |
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
-
-Ordered by `file`, `testName`.
 
 ```json
 [
@@ -179,8 +175,6 @@ Ordered by `file`, `testName`.
 ]
 ```
 
-S3 URI fields may be `null`.
-
 ### List Flaky Tests
 
 ```bash
@@ -198,8 +192,6 @@ For each unique `(file, testName)` in the window, returns its latest row when th
 | `to` | string | ISO timestamp upper bound (inclusive) on run `createdAt`. Defaults to `now` |
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
-
-Ordered by `file`, `testName`.
 
 ```json
 [
@@ -221,7 +213,7 @@ Ordered by `file`, `testName`.
 ]
 ```
 
-When present, `errorMessage` carries the first-attempt failure that triggered the retry. S3 URI fields may be `null`.
+When present, `errorMessage` carries the first-attempt failure that triggered the retry.
 
 ### Download S3 File
 
@@ -230,9 +222,9 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "$SHIPLIGHT_API_URL/v1/s3/file?uri=s3://shipyard-test-results/<org-id>/tests/_local/test-results/<id>/report.json"
 ```
 
-**Query:** `uri` (string, required). Bucket must be the Shiplight test-results bucket; the key's first segment must equal your organization ID.
+**Query:** `uri` (string, required) — an `s3://` URI from a result row (`reportS3Uri`, `videoS3Uri`, `traceS3Uri`).
 
-**Response:** raw bytes with `Content-Disposition: attachment` (always a download, never inline). `Content-Type` is set from an extension allow-list (`webm`, `zip`, `json`, `txt`, `log`, `png`, `jpg`, `jpeg`); any other extension — including `.html` and `.svg` — returns `application/octet-stream`. Save binaries with `curl -o <file>`.
+**Response:** raw file bytes; save with `curl -o <file>`.
 
 ## Workflows
 
