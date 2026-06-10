@@ -55,20 +55,14 @@ Returns a bare array ordered by `createdAt` descending.
 | `result` | string | Exact match on overall run result. Lowercase: `passed`, `failed`, `pending` |
 | `repo` | string | Exact match on `org/repo` |
 | `branch` | string | Exact match on branch |
-| `trigger` | string | Exact match on how the run was started: `local_cli`, `github_action`, `manual`, `api` |
 | `from` | string | ISO timestamp lower bound (inclusive) on `createdAt` |
 | `to` | string | ISO timestamp upper bound (inclusive) on `createdAt` |
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
 
-**Response:** array of `{ id, status, result, trigger, branch, commitSha, repo, target, startTime, endTime, totalTestCount, passedCount, flakyCount, failedCount, skippedCount, metadata, ... }`.
+**Response:** array of `{ id, status, result, branch, commitSha, repo, target, startTime, endTime, totalTestCount, passedCount, flakyCount, failedCount, skippedCount, metadata, ... }`.
 
-**Notes:**
-- `status` ∈ `{running, finished}`; not a filter — use `result=pending` for unfinished runs.
-- `passedCount` includes `flakyCount` (use `passedCount - flakyCount` for strict passes); `failedCount` includes `timedout`. Sum = `totalTestCount`.
-- `branch`, `commitSha`, `repo`, `author` are `null` on local runs; `endTime` is `null` while running. `target` is `'local'` when no repo.
-- `metadata` is a fixed allowlist of CI/git/PR context keys. Reporter git fields (`gitBranch`, `gitCommit`, `gitRepo`, `authorEmail`) become top-level columns, not metadata.
-- Bare array, no `total` — paginate until empty.
+`passedCount` includes `flakyCount` (use `passedCount - flakyCount` for strict passes); `failedCount` includes `timedout`. Sum = `totalTestCount`.
 
 ### Get Test Run
 
@@ -85,7 +79,6 @@ Returns the run plus every `testCaseResult` row.
     "id": 42,
     "status": "finished",
     "result": "passed",
-    "trigger": "local_cli",
     "branch": "main",
     "totalTestCount": 1,
     "passedCount": 1,
@@ -157,9 +150,7 @@ Results for one file across runs, newest first. Each row includes a nested `test
 ]
 ```
 
-**Notes:**
-- Per-row `status` ∈ `{running, finished}`; `errorMessage` and S3 URIs may be `null` — skip rows missing the URI you need.
-- Bare array, no `total` — paginate until empty.
+Per-row `status` ∈ `{running, finished}`; `errorMessage` and S3 URIs may be `null` — skip rows missing the URI you need.
 
 ### List Failing Tests
 
@@ -176,7 +167,6 @@ For each unique `(file, testName)` in the window, returns its latest row when th
 | `branch` | string | Exact match on branch |
 | `from` | string | ISO timestamp lower bound (inclusive) on run `createdAt`. Defaults to `now - 7 days` |
 | `to` | string | ISO timestamp upper bound (inclusive) on run `createdAt`. Defaults to `now` |
-| `result` | string | Outcomes to match, CSV: `failed`, `timedout` |
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
 
@@ -209,7 +199,7 @@ Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run who
 ]
 ```
 
-S3 URI fields may be `null`. Bare array, no `total` — paginate until empty.
+S3 URI fields may be `null`.
 
 ### List Flaky Tests
 
@@ -226,7 +216,6 @@ For each unique `(file, testName)` in the window, returns its latest row when th
 | `branch` | string | Exact match on branch |
 | `from` | string | ISO timestamp lower bound (inclusive) on run `createdAt`. Defaults to `now - 7 days` |
 | `to` | string | ISO timestamp upper bound (inclusive) on run `createdAt`. Defaults to `now` |
-| `result` | string | Outcomes to match, CSV: `flaky` |
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
 
@@ -259,7 +248,7 @@ Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run who
 ]
 ```
 
-When present, `errorMessage` carries the first-attempt failure that triggered the retry. S3 URI fields may be `null`. Bare array, no `total` — paginate until empty.
+When present, `errorMessage` carries the first-attempt failure that triggered the retry. S3 URI fields may be `null`.
 
 ### Download S3 File
 
