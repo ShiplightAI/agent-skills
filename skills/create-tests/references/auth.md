@@ -105,10 +105,11 @@ export async function login(args: Record<string, unknown>): Promise<string> {
 
 ```yaml
 use:
-  auth: ./auth.login.ts
-  args:
-    username: admin@example.com
-    password: "{{ADMIN_PASSWORD}}"
+  account:
+    auth: ./auth.login.ts
+    args:
+      username: admin@example.com
+      password: "{{ADMIN_PASSWORD}}"
 goal: Admin can manage users
 statements:
   - URL: /admin/users
