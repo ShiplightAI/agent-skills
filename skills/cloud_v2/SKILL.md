@@ -71,7 +71,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "$SHIPLIGHT_API_URL/v1/test-runs/42"
 ```
 
-Returns the run plus every `testCaseResult` row.
+Returns the run (`testRun`) plus every `testCaseResult` row, unpaginated.
 
 ```json
 {
@@ -97,12 +97,6 @@ Returns the run plus every `testCaseResult` row.
 }
 ```
 
-**Notes:**
-- `testRun` is the full DB row (same semantics as List Test Runs).
-- `testCaseResults` is unpaginated; for big runs use `/v1/failing-tests` + `/v1/flaky-tests`.
-- Per-result `status` ∈ `{running, finished}`; `startTime`, `endTime`, `errorMessage`, S3 URIs may be `null`.
-- Each result has its own `metadata` jsonb with per-test reporter fields (suite, tags, timeout, etc.).
-
 ### List Test Results by File
 
 ```bash
@@ -110,7 +104,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "$SHIPLIGHT_API_URL/v1/test-results?repo=org/repo&file=tests/checkout.spec.ts&pageSize=10"
 ```
 
-Results for one file across runs, newest first. Each row includes a nested `testRun` (branch, commit, repo).
+Results for one file across runs, newest first.
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -138,14 +132,7 @@ Results for one file across runs, newest first. Each row includes a nested `test
     "reportS3Uri": "s3://shipyard-test-results/org-1/tests/_local/test-results/101/report.json",
     "videoS3Uri": "s3://...",
     "traceS3Uri": "s3://...",
-    "createdAt": "2026-05-27T10:00:11.000Z",
-    "testRun": {
-      "id": 42,
-      "branch": "main",
-      "commitSha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-      "repo": "org/repo",
-      "createdAt": "2026-05-27T10:00:00.000Z"
-    }
+    "createdAt": "2026-05-27T10:00:11.000Z"
   }
 ]
 ```
@@ -170,7 +157,7 @@ For each unique `(file, testName)` in the window, returns its latest row when th
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
 
-Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run whose result is the most recent for that test).
+Ordered by `file`, `testName`.
 
 ```json
 [
@@ -187,14 +174,7 @@ Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run who
     "reportS3Uri": "s3://shipyard-test-results/org-1/tests/_local/test-results/101/report.json",
     "videoS3Uri": "s3://...",
     "traceS3Uri": "s3://...",
-    "createdAt": "2026-05-27T10:00:11.000Z",
-    "testRun": {
-      "id": 42,
-      "branch": "main",
-      "commitSha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-      "repo": "org/repo",
-      "createdAt": "2026-05-27T10:00:00.000Z"
-    }
+    "createdAt": "2026-05-27T10:00:11.000Z"
   }
 ]
 ```
@@ -219,7 +199,7 @@ For each unique `(file, testName)` in the window, returns its latest row when th
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
 
-Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run whose result is the most recent for that test).
+Ordered by `file`, `testName`.
 
 ```json
 [
@@ -236,14 +216,7 @@ Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run who
     "reportS3Uri": "s3://shipyard-test-results/org-1/tests/_local/test-results/207/report.json",
     "videoS3Uri": "s3://...",
     "traceS3Uri": "s3://...",
-    "createdAt": "2026-05-27T10:00:36.000Z",
-    "testRun": {
-      "id": 42,
-      "branch": "main",
-      "commitSha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-      "repo": "org/repo",
-      "createdAt": "2026-05-27T10:00:00.000Z"
-    }
+    "createdAt": "2026-05-27T10:00:36.000Z"
   }
 ]
 ```
