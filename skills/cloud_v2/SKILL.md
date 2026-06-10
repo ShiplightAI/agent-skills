@@ -23,7 +23,7 @@ If the user provides a token, append it to the project's `.env` file as `SHIPLIG
 
 ## CI Integration
 
-The runs this skill reads are produced in CI by the `shiplight report` CLI, which uploads each test run's artifacts to Shiplight Cloud. This skill is read-only and does **not** publish runs.
+The runs this skill reads are produced in CI by the `shiplight report` CLI, which uploads each test run's artifacts to Shiplight Cloud.
 
 To set up a GitHub Actions workflow (default or Shiplight-hosted runners, tokens, and `shiplight report` wiring), see the **create-tests** skill's `references/ci.md`.
 
@@ -55,12 +55,20 @@ Returns a bare array ordered by `createdAt` descending.
 | `result` | string | Exact match on overall run result. Lowercase: `passed`, `failed`, `pending` |
 | `repo` | string | Exact match on `org/repo` |
 | `branch` | string | Exact match on branch |
+| `trigger` | string | Exact match on how the run was started: `local_cli`, `github_action`, `manual`, `api` |
 | `from` | string | ISO timestamp lower bound (inclusive) on `createdAt` |
 | `to` | string | ISO timestamp upper bound (inclusive) on `createdAt` |
 | `page` | number | Default `1` |
 | `pageSize` | number | Default `20` |
 
 **Response:** array of `{ id, status, result, trigger, branch, commitSha, repo, target, startTime, endTime, totalTestCount, passedCount, flakyCount, failedCount, skippedCount, metadata, ... }`.
+
+**Notes:**
+- `status` ∈ `{running, finished}`; not a filter — use `result=pending` for unfinished runs.
+- `passedCount` includes `flakyCount` (use `passedCount - flakyCount` for strict passes); `failedCount` includes `timedout`. Sum = `totalTestCount`.
+- `branch`, `commitSha`, `repo`, `author` are `null` on local runs; `endTime` is `null` while running. `target` is `'local'` when no repo.
+- `metadata` is a fixed allowlist of CI/git/PR context keys. Reporter git fields (`gitBranch`, `gitCommit`, `gitRepo`, `authorEmail`) become top-level columns, not metadata.
+- Bare array, no `total` — paginate until empty.
 
 ### Get Test Run
 
@@ -69,7 +77,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "$SHIPLIGHT_API_URL/v1/test-runs/42"
 ```
 
-Returns the run plus every `testCaseResult` row — no result-level pagination.
+Returns the run plus every `testCaseResult` row.
 
 ```json
 {
@@ -96,7 +104,11 @@ Returns the run plus every `testCaseResult` row — no result-level pagination.
 }
 ```
 
-`400` if `:id` is not numeric; `404` if the run does not exist.
+**Notes:**
+- `testRun` is the full DB row (same semantics as List Test Runs).
+- `testCaseResults` is unpaginated; for big runs use `/v1/failing-tests` + `/v1/flaky-tests`.
+- Per-result `status` ∈ `{running, finished}`; `startTime`, `endTime`, `errorMessage`, S3 URIs may be `null`.
+- Each result has its own `metadata` jsonb with per-test reporter fields (suite, tags, timeout, etc.).
 
 ### List Test Results by File
 
@@ -105,13 +117,13 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "$SHIPLIGHT_API_URL/v1/test-results?repo=org/repo&file=tests/checkout.spec.ts&pageSize=10"
 ```
 
-Returns a bare array ordered by result `createdAt` descending. Each row carries the test result fields plus a nested `testRun` with parent context (branch, commit, repo).
+Results for one file across runs, newest first. Each row includes a nested `testRun` (branch, commit, repo).
 
 | Param | Type | Description |
 |-------|------|-------------|
 | `repo` | string | **Required.** Exact match on `org/repo`. |
 | `file` | string | **Required.** Exact match on the test file path stored on the result row. |
-| `result` | string | Lowercase: `passed`, `failed`, `pending` |
+| `result` | string | Per-row result. Lowercase: `passed`, `failed`, `timedout`, `flaky`, `skipped`, `pending` |
 | `branch` | string | Exact match on branch |
 | `from` | string | ISO timestamp lower bound (inclusive) on result `createdAt` |
 | `to` | string | ISO timestamp upper bound (inclusive) on result `createdAt` |
@@ -137,7 +149,7 @@ Returns a bare array ordered by result `createdAt` descending. Each row carries 
     "testRun": {
       "id": 42,
       "branch": "main",
-      "commitSha": "abc1234",
+      "commitSha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
       "repo": "org/repo",
       "createdAt": "2026-05-27T10:00:00.000Z"
     }
@@ -145,7 +157,109 @@ Returns a bare array ordered by result `createdAt` descending. Each row carries 
 ]
 ```
 
-`400` if `repo` or `file` is missing.
+**Notes:**
+- Per-row `status` ∈ `{running, finished}`; `errorMessage` and S3 URIs may be `null` — skip rows missing the URI you need.
+- Bare array, no `total` — paginate until empty.
+
+### List Failing Tests
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "$SHIPLIGHT_API_URL/v1/failing-tests?repo=org/repo"
+```
+
+For each unique `(file, testName)` in the window, returns its latest row when the result is `failed` or `timedout`.
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `repo` | string | **Required.** Exact match on `org/repo` |
+| `branch` | string | Exact match on branch |
+| `from` | string | ISO timestamp lower bound (inclusive) on run `createdAt`. Defaults to `now - 7 days` |
+| `to` | string | ISO timestamp upper bound (inclusive) on run `createdAt`. Defaults to `now` |
+| `result` | string | Outcomes to match, CSV: `failed`, `timedout` |
+| `page` | number | Default `1` |
+| `pageSize` | number | Default `20` |
+
+Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run whose result is the most recent for that test).
+
+```json
+[
+  {
+    "id": 101,
+    "testRunId": 42,
+    "file": "tests/checkout.spec.ts",
+    "testName": "checkout succeeds",
+    "status": "finished",
+    "result": "failed",
+    "startTime": "2026-05-27T10:00:01.000Z",
+    "endTime": "2026-05-27T10:00:10.000Z",
+    "errorMessage": "Expected status 200, got 500",
+    "reportS3Uri": "s3://shipyard-test-results/org-1/tests/_local/test-results/101/report.json",
+    "videoS3Uri": "s3://...",
+    "traceS3Uri": "s3://...",
+    "createdAt": "2026-05-27T10:00:11.000Z",
+    "testRun": {
+      "id": 42,
+      "branch": "main",
+      "commitSha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
+      "repo": "org/repo",
+      "createdAt": "2026-05-27T10:00:00.000Z"
+    }
+  }
+]
+```
+
+S3 URI fields may be `null`. Bare array, no `total` — paginate until empty.
+
+### List Flaky Tests
+
+```bash
+curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
+  "$SHIPLIGHT_API_URL/v1/flaky-tests?repo=org/repo"
+```
+
+For each unique `(file, testName)` in the window, returns its latest row when the result is `flaky` (passed only after retry).
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `repo` | string | **Required.** Exact match on `org/repo` |
+| `branch` | string | Exact match on branch |
+| `from` | string | ISO timestamp lower bound (inclusive) on run `createdAt`. Defaults to `now - 7 days` |
+| `to` | string | ISO timestamp upper bound (inclusive) on run `createdAt`. Defaults to `now` |
+| `result` | string | Outcomes to match, CSV: `flaky` |
+| `page` | number | Default `1` |
+| `pageSize` | number | Default `20` |
+
+Ordered by `file`, `testName`. Each row includes a nested `testRun` (the run whose result is the most recent for that test).
+
+```json
+[
+  {
+    "id": 207,
+    "testRunId": 42,
+    "file": "tests/checkout.spec.ts",
+    "testName": "applies promo code",
+    "status": "finished",
+    "result": "flaky",
+    "startTime": "2026-05-27T10:00:20.000Z",
+    "endTime": "2026-05-27T10:00:35.000Z",
+    "errorMessage": "TimeoutError: locator.click — first attempt timed out after 5000ms",
+    "reportS3Uri": "s3://shipyard-test-results/org-1/tests/_local/test-results/207/report.json",
+    "videoS3Uri": "s3://...",
+    "traceS3Uri": "s3://...",
+    "createdAt": "2026-05-27T10:00:36.000Z",
+    "testRun": {
+      "id": 42,
+      "branch": "main",
+      "commitSha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
+      "repo": "org/repo",
+      "createdAt": "2026-05-27T10:00:00.000Z"
+    }
+  }
+]
+```
+
+When present, `errorMessage` carries the first-attempt failure that triggered the retry. S3 URI fields may be `null`. Bare array, no `total` — paginate until empty.
 
 ### Download S3 File
 
@@ -154,7 +268,7 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
   "$SHIPLIGHT_API_URL/v1/s3/file?uri=s3://shipyard-test-results/<org-id>/tests/_local/test-results/<id>/report.json"
 ```
 
-**Query:** `uri` (string, required). Bucket must be the Shiplight test-results bucket; the key's first segment must equal your organization ID. Other buckets and cross-org keys return `403`. `..`, `//`, and double-encoded segments return `400`.
+**Query:** `uri` (string, required). Bucket must be the Shiplight test-results bucket; the key's first segment must equal your organization ID.
 
 **Response:** raw bytes with `Content-Disposition: attachment` (always a download, never inline). `Content-Type` is set from an extension allow-list (`webm`, `zip`, `json`, `txt`, `log`, `png`, `jpg`, `jpeg`); any other extension — including `.html` and `.svg` — returns `application/octet-stream`. Save binaries with `curl -o <file>`.
 
@@ -166,3 +280,9 @@ curl -H "Authorization: Bearer $SHIPLIGHT_API_TOKEN" \
 2. `GET /v1/test-runs/{testRunId}` to load `testRun` + `testCaseResults`.
 3. For each failed `testCaseResult`, `GET /v1/s3/file?uri=<reportS3Uri>` to fetch the report JSON.
 4. Parse the report and stream any nested `s3://` URIs via `GET /v1/s3/file?uri=…`. Report schema is reporter-defined; expect arbitrary fields containing `s3://` values.
+
+### Triage Failures or Flaky Tests
+
+1. `GET /v1/failing-tests?repo=org/repo` (or `/v1/flaky-tests`) — defaults to the last 7 days on any branch. Add `branch=` to scope, `from`/`to` to widen or shift the window.
+2. For each row, `GET /v1/s3/file?uri=<reportS3Uri>` to fetch the report JSON.
+3. Parse the report and stream any nested `s3://` URIs via `GET /v1/s3/file?uri=…`.
