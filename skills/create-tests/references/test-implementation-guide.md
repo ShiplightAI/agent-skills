@@ -93,6 +93,36 @@ Minimize explicit waits. Browser actions, navigation, and assertions already inc
 
 Do not add waits after ordinary page loads, clicks, form submits, or data refreshes just because the UI might change. Let the next action or assertion prove expected state.
 
+## File Downloads
+
+Downloads are tracked automatically on every page, including popups and new tabs. Each downloaded file is saved into the test's output directory under `downloads/`.
+
+Two primitives carry download support; everything else is an ordinary test step:
+
+1. `action: wait_for_download_complete` — blocks until the tracked download finishes. It also covers downloads that have not started yet, so size `timeout_seconds` (default 10) to cover server-side file generation plus transfer time.
+2. `agent.getRecentDownloadedFilePath()` — call it in a `js:` block to get the local path of the saved file. From there it is a normal file: read it, parse it, assert on its contents, or pass it to a later step.
+
+Example shape — the trigger step and the assertions are placeholders; adapt them to what the real test must prove (file contents, row counts, re-upload, etc.):
+
+```yaml
+- intent: Click the Export CSV button
+  action: click
+  locator: "getByRole('button', { name: 'Export CSV' })"
+
+- intent: Wait for the export download to complete
+  action: wait_for_download_complete
+  timeout_seconds: 30
+
+- description: Verify the downloaded file is non-empty
+  js: |
+    const filePath = agent.getRecentDownloadedFilePath();
+    expect(filePath).toContain('.csv');
+    const fs = await import('node:fs');
+    expect(fs.statSync(filePath).size).toBeGreaterThan(0);
+```
+
+Only the most recent download is tracked. Wait for and verify each download before triggering the next one.
+
 ## General Conventions
 
 - Put `intent` first in ACTION statements.
