@@ -123,6 +123,54 @@ Key points:
 - The auth script owns caching and expiration policy for `.auth/*`.
 - Tests without `use.auth` run with the default context. If shared auth is configured, they inherit that `storageState`; otherwise they run unauthenticated.
 
+## Agent Login Helpers
+
+The `agent` provided by the test fixture exposes two login helpers, usable from
+a `js:` statement inside a test or from an auth script that drives the agent
+directly. Prefer the declarative auth above (`storageState` / auth scripts) for
+ordinary suites; reach for these when a login flow is dynamic enough that AI
+navigation is more robust than a hardcoded selector script.
+
+### `agent.login(page, options): Promise<boolean>`
+
+Performs a username/password login (with optional TOTP 2FA). The agent
+navigates to `options.url`, finds the fields, enters the credentials, handles
+2FA when `totpSecret` is supplied, verifies the result, and returns `true` on
+success.
+
+| Field        | Type     | Required | Description                          |
+| ------------ | -------- | -------- | ------------------------------------ |
+| `url`        | `string` | Yes      | URL of the login page                |
+| `username`   | `string` | Yes      | Username or email                    |
+| `password`   | `string` | Yes      | Password                             |
+| `totpSecret` | `string` | No       | TOTP secret — agent generates the OTP |
+
+```js
+const ok = await agent.login(page, {
+  url: "/login",
+  username: process.env.ADMIN_USER,
+  password: process.env.ADMIN_PASSWORD,
+  totpSecret: process.env.ADMIN_TOTP_SECRET, // optional, for 2FA
+});
+if (!ok) throw new Error("login failed");
+```
+
+### `agent.generate2faCode(secret): Promise<string>`
+
+Generates the current 6-digit TOTP code from a secret key. Use this only when
+driving a **custom** multi-step login by hand — `agent.login()` already handles
+TOTP internally when given `totpSecret`, so you do not need this alongside it.
+
+```js
+const code = await agent.generate2faCode(process.env.TOTP_SECRET);
+// then enter `code` into the verification field via your custom step
+```
+
+> Inside YAML statements, the same capability is also available as the
+> `generate_2fa_code` action, which stores the result in the `$otp_code`
+> variable; see `shiplight://schemas/action-entity` for its parameters. The
+> helper above is for code-level use when you need the raw code in JavaScript.
+
 ## File Placement
 
 Do not assume auth files must live under `auth/`.
