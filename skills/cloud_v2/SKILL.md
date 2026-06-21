@@ -25,7 +25,7 @@ If the user provides a token, append it to the project's `.env` file as `SHIPLIG
 
 The runs this skill reads are produced in CI by the `shiplight report` CLI, which uploads each test run's artifacts to Shiplight Cloud.
 
-To set up a GitHub Actions workflow (default or Shiplight-hosted runners, tokens, and `shiplight report` wiring), see the **create-tests** skill's `references/ci.md`.
+To set up a GitHub Actions workflow (default or Shiplight-hosted runners, tokens, and `shiplight report` wiring), see the **create-yaml-tests** skill's `references/ci.md`.
 
 ## Error Handling
 

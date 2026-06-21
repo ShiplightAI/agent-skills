@@ -18,7 +18,7 @@ Use `/triage` when:
 
 Skip `/triage` when:
 
-- Creating new tests from scratch; use `/create-tests`
+- Creating new tests from scratch; use `/create-yaml-tests`
 - Verifying UI code changes without failing tests; use `/verify`
 - Tests pass and the task is only quality improvement
 - The product is being intentionally redesigned and tests need planned rewriting
@@ -27,7 +27,7 @@ Skip `/triage` when:
 
 Before editing YAML:
 
-1. Read the `create-tests` reference guides `project-layout.md`, `updating-tests.md`, `test-implementation-guide.md`, and `knowledge.md`.
+1. Read the `create-yaml-tests` reference guides `project-layout.md`, `updating-tests.md`, `test-implementation-guide.md`, and `knowledge.md`.
 2. Read relevant `knowledge/` notes for the failing area, environment, auth, data, and tooling.
 3. Read the matching spec under `specs/tests/`, if one exists.
 4. Read `shiplight://yaml-test-spec` and `shiplight://schemas/action-entity`.

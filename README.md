@@ -19,9 +19,17 @@ npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console
 | Skill | Purpose |
 |-------|---------|
 | `/verify` | Visually confirm UI changes in the browser after a code change |
-| `/create-tests` | Spec-driven E2E test creation: plan, scaffold, and write YAML tests by walking through the app |
+| `/create-yaml-tests` | Spec-driven E2E test creation: plan, scaffold, and write deterministic YAML tests by walking through the app |
+| `/create-agent-tests` | Author and run coding-agent-driven Markdown test cases against a live environment (browser, API, DB, logs) with auditable PASS/FAIL reports |
 | `/triage` | Reproduce failing E2E tests, diagnose root causes, fix YAML, and report app bugs |
 | `/cloud` | Sync local tests with Shiplight cloud for scheduled runs, team collaboration (subscription required) |
+
+### Spec-driven development
+
+| Skill | Purpose |
+|-------|---------|
+| `/speckit-project` | Drive spec-driven (or spec-less) development: PRD, feature breakdown, active feature, and the specify → plan → tasks → implement lifecycle |
+| `/test-coverage` | After a feature/PR, pick the testing strategy and drive the producers to write comprehensive tests; record what was tested and by what type |
 
 ### Review helpers
 
@@ -93,7 +101,7 @@ npx skills add ShiplightAI/agent-skills --list
 npx skills update
 ```
 
-The `/verify` and `/create-tests` skills also include an opportunistic daily update check. When a coding agent uses one of those skills, the skill asks the agent to use `.shiplight-agent-skills-last-update` as the project-local attempt timestamp. On first use, if the file does not exist yet, the agent should create it and skip the update so a newly installed project does not pay for a second install. After that, the agent should run `npx -y skills@latest update -y` at most once every 24 hours. Treat this file as local cache and do not commit it.
+The `/verify` and `/create-yaml-tests` skills also include an opportunistic daily update check. When a coding agent uses one of those skills, the skill asks the agent to use `.shiplight-agent-skills-last-update` as the project-local attempt timestamp. On first use, if the file does not exist yet, the agent should create it and skip the update so a newly installed project does not pay for a second install. After that, the agent should run `npx -y skills@latest update -y` at most once every 24 hours. Treat this file as local cache and do not commit it.
 
 ## Links
 
