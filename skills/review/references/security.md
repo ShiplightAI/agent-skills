@@ -1,15 +1,10 @@
----
-name: security-review
-description: "Security review and penetration testing: evaluate your application against OWASP Top 10, authentication security, HTTP headers, CORS, CSP, supply chain risks, and common attack vectors with browser-based validation."
----
-
 # Security Review
 
 Evaluate your application's security posture against industry standards and validate findings through browser-based penetration testing. This review covers the attack surface that static analysis tools miss — runtime behavior, header configuration, authentication flows, and client-side vulnerabilities.
 
 ## When to use
 
-Use `/security-review` when:
+Use this review when:
 - Before launching a new application or feature
 - After adding authentication or authorization changes
 - When handling sensitive data (user credentials, payment info, PII)

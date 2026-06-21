@@ -1,15 +1,10 @@
----
-name: seo-review
-description: "SEO and discoverability review: evaluate meta tags, structured data, Open Graph, crawlability, sitemap, robots.txt, semantic HTML, and social sharing with browser-based validation."
----
-
 # SEO Review
 
 Evaluate your application's search engine optimization and discoverability. This review catches SEO issues that are invisible during normal development — missing meta tags, broken structured data, poor crawlability, missing sitemaps, and social sharing problems. Many SPAs ship with zero SEO consideration.
 
 ## When to use
 
-Use `/seo-review` when:
+Use this review when:
 - Before launching a public-facing website or application
 - After redesigning or migrating a website
 - When organic traffic is a growth channel

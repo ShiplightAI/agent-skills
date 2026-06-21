@@ -1,15 +1,10 @@
----
-name: geo-review
-description: "Generative Engine Optimization review: evaluate your content's visibility to AI-powered search engines — citation-worthiness, content structure, authority signals, llms.txt, entity clarity, and AI retrieval readiness."
----
-
 # GEO Review
 
 Evaluate how well your application and content are optimized for AI-powered search and answer engines — ChatGPT, Perplexity, Google AI Overviews, Claude, and other generative AI systems that cite web sources. Traditional SEO gets you ranked in a link list; GEO gets you **cited in AI-generated answers**.
 
 ## When to use
 
-Use `/geo-review` when:
+Use this review when:
 - Your product is discovered through AI assistants (developer tools, SaaS, APIs)
 - You want to appear in Google AI Overviews
 - Users find your product by asking AI "what's the best X for Y?"

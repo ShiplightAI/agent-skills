@@ -1,15 +1,10 @@
----
-name: design-review
-description: "UI and design review: evaluate visual quality, responsive behavior, accessibility, color/contrast, typography, layout consistency, and i18n readiness using browser-based validation against industrial standards."
----
-
 # Design Review
 
 Evaluate your application's visual quality and usability against established design standards. This review catches issues that typically require a trained designer's eye — responsive breakpoints, accessibility compliance, visual hierarchy, spacing consistency, and internationalization readiness.
 
 ## When to use
 
-Use `/design-review` when:
+Use this review when:
 - Shipping UI without a designer reviewing it
 - Before a launch or demo
 - After significant UI changes or redesigns

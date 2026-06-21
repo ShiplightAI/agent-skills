@@ -1,15 +1,10 @@
----
-name: privacy-review
-description: "Privacy review and testing: evaluate PII handling, data flows, tracking inventory, consent mechanisms, storage practices, and data leakage risks with browser-based validation against GDPR, CCPA, and industry best practices."
----
-
 # Privacy Review
 
 Evaluate how your application handles personal data — where it's collected, processed, stored, transmitted, and potentially leaked. This review catches privacy issues that code review alone misses: runtime data flows, third-party tracking, console/network leaks, and consent implementation gaps.
 
 ## When to use
 
-Use `/privacy-review` when:
+Use this review when:
 - Your app collects any personal information (names, emails, addresses, etc.)
 - Before launching in GDPR/CCPA jurisdictions
 - Adding third-party analytics, tracking, or marketing tools

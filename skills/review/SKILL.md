@@ -1,37 +1,61 @@
 ---
 name: review
-description: "Review orchestrator: assess your application and recommend the right combination of design, security, privacy, compliance, resilience, performance, SEO, and GEO reviews."
+description: "Review orchestrator and single entry point for all application reviews. Triage what needs reviewing, then run the right domains: security (OWASP, auth, headers, supply chain), privacy (PII, tracking, consent, GDPR/CCPA), compliance (HIPAA, SOC 2, PCI-DSS, GDPR), design (responsive, accessibility, typography, i18n), resilience (error handling, degradation, API contracts), performance (Core Web Vitals, bundles, runtime), SEO (meta, structured data, crawlability), and GEO (AI citation readiness, llms.txt, entity clarity). Use for pre-launch readiness, post-incident planning, or any 'review my app for X' request."
 ---
 
 # Review Orchestrator
 
+The single entry point for application reviews. It triages what matters, then
+runs one or more domain reviews and merges them into a unified report. Each
+domain lives in `references/<domain>.md` and is loaded only when selected.
+
 ## When to use
 
-- User wants a comprehensive review but doesn't know where to start
+- User wants a review but isn't sure which kind
 - Pre-launch readiness assessment
 - Post-incident review planning
-- New team member wants to understand review coverage
+- A targeted request for one domain ("check my app's security", "review SEO")
 
-## How it works
+## Modes
 
-Three modes:
+- **Triage** (default, `/review`) — ask context questions, recommend a plan, run it.
+- **Full suite** (`/review --all`) — run every applicable domain.
+- **Targeted** (`/review <domain>`) — jump straight into one domain, skipping
+  triage. E.g. `/review security`, `/review seo`. Accepts an optional depth flag
+  (`--quick` / `--thorough`).
 
-- **Interactive triage** (default) — asks context questions, recommends a review plan
-- **Full suite** (`/review --all`) — runs all applicable categories
-- **Targeted** — user invokes a specific review directly
+## Domains
+
+Each row maps to a reference file. Load the file only when the domain is selected.
+
+| Domain | Reference | Run it when… (trigger signals) |
+|--------|-----------|-------------------------------|
+| security | `references/security.md` | auth/login changes, sensitive data, OWASP, headers/CORS/CSP, supply chain |
+| privacy | `references/privacy.md` | collects PII, tracking/analytics, consent banners, GDPR/CCPA |
+| compliance | `references/compliance.md` | regulated industry, audit prep, HIPAA/SOC 2/PCI-DSS/GDPR, payments or health data |
+| design | `references/design.md` | UI shipping without a designer, responsive, accessibility, typography, i18n |
+| resilience | `references/resilience.md` | error handling, network/API failures, empty/edge states, degradation |
+| performance | `references/performance.md` | slow pages, Core Web Vitals, bundle size, runtime/render perf |
+| seo | `references/seo.md` | public site, meta tags, structured data, crawlability, sitemaps |
+| geo | `references/geo.md` | discovered via AI assistants, LLM citation readiness, llms.txt, entity clarity |
+
+Shared conventions (phases, scoring, confidence, severity, output paths) live in
+`references/report-format.md` — every domain follows them.
 
 ## Steps
 
 ### 1. Gather context
 
-- Read the project: tech stack, framework, package.json, routes, components
-- Check git diff for recent changes
-- Look for existing review reports in `shiplight/reports/`
-- Check for compliance markers (HIPAA mentions, PCI references, GDPR cookies)
+- Read the project: tech stack, framework, `package.json`, routes, components.
+- Check `git diff` for recent changes.
+- Look for existing reports in `shiplight/reports/`.
+- Auto-detect compliance markers (HIPAA/PHI, PCI/payment fields, GDPR/cookie consent).
+
+If invoked as `/review <domain>`, skip to step 4 for that domain.
 
 ### 2. Ask targeted questions (max 4)
 
-Ask one at a time, with auto-detected defaults:
+One at a time, with auto-detected defaults:
 
 1. **What type of application?** (SaaS, healthcare, fintech, e-commerce, internal tool, marketing site, API-only)
 2. **What triggered this review?** (pre-launch, new feature, dependency update, security incident, audit prep, routine)
@@ -40,13 +64,9 @@ Ask one at a time, with auto-detected defaults:
 
 ### 3. Generate review plan
 
-Based on answers, categorize all 8 review types as:
-
-- **CRITICAL** — must run, high risk of issues
-- **RECOMMENDED** — should run, meaningful value
-- **OPTIONAL** — nice to have
-
-Present the plan with rationale for each recommendation. Include estimated depth (quick/standard/thorough) for each.
+Categorize each applicable domain as **CRITICAL** (must run), **RECOMMENDED**
+(meaningful value), or **OPTIONAL** (nice to have), with estimated depth
+(quick / standard / thorough).
 
 **SEO vs GEO prioritization by product type:**
 
@@ -57,50 +77,35 @@ Present the plan with rationale for each recommendation. Include estimated depth
 | Content/media, documentation, blog | CRITICAL | CRITICAL |
 | Internal tools | — | — |
 
-Provide a decision matrix table:
+Present a decision matrix:
 
 | Review | Priority | Rationale | Depth |
 |--------|----------|-----------|-------|
-| /security-review | CRITICAL | New auth feature + SaaS app | thorough |
-| /privacy-review | CRITICAL | Handles user PII, GDPR applies | standard |
-| etc. | | | |
+| security | CRITICAL | New auth feature + SaaS app | thorough |
+| privacy | CRITICAL | Handles user PII, GDPR applies | standard |
+| … | | | |
 
 ### 4. Execute
 
 Ask: "Run all CRITICAL reviews now? [Y/n] Or pick specific ones."
 
-Run selected reviews sequentially. After each, show a brief summary before proceeding to the next.
+For each selected domain, **read `references/<domain>.md` and follow its five
+phases**, applying `references/report-format.md` for scoring, severity, and
+output paths. Run domains sequentially; show a brief summary after each before
+moving on.
 
 ### 5. Unified report
 
-After all reviews complete, generate a unified report:
+After the selected domains complete, merge their per-domain reports into one,
+saved to `shiplight/reports/review-{date}.md`:
 
-- Overall readiness score (0-10)
-- Per-category scores
-- Top 5 findings across all categories (by severity)
-- Regression test summary (total YAML tests generated)
-- Report saved to `shiplight/reports/review-{date}.md`
-
-## Available Reviews
-
-| Skill | Category | What it checks |
-|-------|----------|---------------|
-| `/design-review` | Visual/UI | Responsive, a11y, design consistency, i18n readiness |
-| `/security-review` | Security | OWASP Top 10, auth, headers, supply chain, pen testing |
-| `/privacy-review` | Privacy | PII handling, tracking, data flow, consent |
-| `/compliance-review` | Compliance | HIPAA, SOC2, PCI-DSS, GDPR checklists |
-| `/resilience-review` | Reliability | Error handling, degradation, API contracts |
-| `/performance-review` | Performance | Core Web Vitals, bundle size, runtime perf |
-| `/seo-review` | Discoverability | Meta tags, structured data, crawlability |
-| `/geo-review` | AI Discoverability | LLM citation readiness, entity authority, structured claims |
-
-## Report Format
-
-All review skills produce reports in a consistent format saved to `shiplight/reports/{review-name}-{date}.md`. The orchestrator merges these into a unified report.
+- Overall readiness score (0–10) and per-domain scores
+- Top 5 findings across all domains, by severity
+- Regression test summary (total YAML tests generated, in `shiplight/tests/`)
 
 ## Tips
 
-- Run `/review` before every major launch
-- Individual reviews can be invoked directly when you know what you need
-- Review reports accumulate over time — the orchestrator can show trends
-- YAML regression tests from reviews accumulate in `shiplight/tests/`
+- Run `/review` before every major launch.
+- `/review <domain>` is the fast path when you already know what you need.
+- Reports accumulate in `shiplight/reports/` — the orchestrator can show trends.
+- YAML regression tests from reviews accumulate in `shiplight/tests/`.

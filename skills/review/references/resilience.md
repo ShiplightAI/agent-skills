@@ -1,15 +1,10 @@
----
-name: resilience-review
-description: "Resilience review and testing: evaluate error handling, graceful degradation, API contract compliance, edge cases, and failure recovery with browser-based fault injection and validation."
----
-
 # Resilience Review
 
 Evaluate how your application behaves when things go wrong — network failures, API errors, slow connections, missing data, and edge cases. Most apps are built for the happy path; this review systematically tests the unhappy paths that real users encounter.
 
 ## When to use
 
-Use `/resilience-review` when:
+Use this review when:
 - Before launching a user-facing feature
 - After adding new API integrations or data sources
 - When reliability is critical (healthcare, finance, e-commerce checkout)

@@ -1,15 +1,10 @@
----
-name: performance-review
-description: "Performance review and testing: evaluate Core Web Vitals, page load times, bundle sizes, runtime performance, resource optimization, and rendering efficiency with browser-based measurement and benchmarking."
----
-
 # Performance Review
 
 Measure and evaluate your application's performance against Google's Core Web Vitals thresholds and industry benchmarks. This review catches performance issues that are invisible during development but impact real users — bundle bloat, layout shifts, slow interactions, unoptimized images, and render-blocking resources.
 
 ## When to use
 
-Use `/performance-review` when:
+Use this review when:
 - Before launching or after major feature additions
 - Page load feels slow but you're not sure why
 - Preparing for high-traffic events

@@ -33,20 +33,11 @@ npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console
 
 ### Review helpers
 
-
-
+`/review` is the single entry point. It triages your app and runs the right domain reviews, or jump straight to one with `/review <domain>` (e.g. `/review security`).
 
 | Skill | Purpose |
 |-------|---------|
-| `/review` | Orchestrator that recommends the right reviews for your app |
-| `/design-review` | Visual quality, responsive, accessibility, typography, i18n |
-| `/security-review` | OWASP Top 10, auth, injection, access control, supply chain |
-| `/privacy-review` | PII leakage, consent, tracking, data flows, user rights |
-| `/compliance-review` | HIPAA, SOC 2, PCI-DSS, GDPR technical requirements |
-| `/resilience-review` | Error handling, graceful degradation, edge states, API contracts |
-| `/performance-review` | Core Web Vitals, bundles, resources, runtime performance |
-| `/seo-review` | Meta tags, structured data, crawlability, semantic HTML |
-| `/geo-review` | AI citation readiness, llms.txt, entity clarity, AI search testing |
+| `/review` | Orchestrator + all review domains: **security** (OWASP, auth, injection, access control, supply chain), **privacy** (PII, consent, tracking, data flows, user rights), **compliance** (HIPAA, SOC 2, PCI-DSS, GDPR), **design** (visual, responsive, accessibility, typography, i18n), **resilience** (error handling, degradation, edge states, API contracts), **performance** (Core Web Vitals, bundles, runtime), **SEO** (meta, structured data, crawlability), **GEO** (AI citation readiness, llms.txt, entity clarity) |
 
 ## Install
 
