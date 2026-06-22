@@ -2,7 +2,7 @@
 
 **Scope**: <feature | module | PR | ticket>
 **Source material**: <paths, prompt, issue, PRD, ticket, or "inferred">
-**Quality policy**: repo-root `quality-policy.yaml` if present, else the baked-in default
+**Testing posture**: repo-root `TESTING.md` if present, else the baked-in default
 **Test report**: [test-report.md](./test-report.md)
 
 This file defines the durable testing contract for this target: what needs

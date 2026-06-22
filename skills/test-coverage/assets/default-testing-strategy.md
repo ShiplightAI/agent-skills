@@ -1,8 +1,8 @@
-# Default Quality Policy (Guideline)
+# Default Testing Strategy (Guideline)
 
 > This is the baked-in default testing strategy for `test-coverage`.
 > It encodes expert judgment, not hard rules. Projects can override it with a
-> checked-in `quality-policy.yaml` when they need a different proof posture.
+> checked-in `TESTING.md` when they need a different proof posture.
 > Treat it as guidance for *how to allocate testing effort*, not a checklist to
 > satisfy.
 

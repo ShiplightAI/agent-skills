@@ -20,8 +20,9 @@ type, and what passed — not a graded confidence verdict.
   behaviors, invariants, risks, and the declared priority of each.
 - `specs/<feature>/test-report.md` — the session record: what was tested, by
   what test **type**, what ran, and what passed, failed, or was blocked.
-- Repo-root `quality-policy.yaml` — project testing-strategy guidance (how hard
-  to test, by priority). Standalone-safe: a baked-in default applies when absent.
+- Repo-root `TESTING.md` (optional) — project testing-strategy notes (preferred
+  modalities, gate/posture by priority, context labels). Standalone-safe: a
+  baked-in default applies when absent.
 
 ## Two Layers
 
@@ -64,18 +65,19 @@ verdict.
 Resolve the strategy posture for each behavior, first match wins:
 
 1. A per-behavior note in `test-spec.md` (one-off tuning).
-2. Repo-root `quality-policy.yaml`, if present.
-3. The baked-in default in `assets/default-quality-policy.md`.
+2. Repo-root `TESTING.md`, if present (project-wide posture notes).
+3. The baked-in default in `assets/default-testing-strategy.md`.
 
-The default policy holds the modality economics, the decision principle, the
-three guardrails (capability-before-cost; priority-floor / budget-ceiling;
+The default holds the modality economics, the decision principle, the three
+guardrails (capability-before-cost; priority-floor / budget-ceiling;
 defense-in-depth), and the non-negotiable floors (unit coverage on core/changed
 logic; at least one gate on every P0 check). Standalone-safe: never require
-`quality-policy.yaml`; fall back to the baked-in default when absent.
+`TESTING.md`; fall back to the baked-in default when absent.
 
-`quality-policy.yaml` is project-wide: promoting a recurring decision into it
-changes every feature's posture, so confirm a repo-root policy change with the
-user instead of editing it silently mid-pass.
+`TESTING.md` is prose guidance the agent reads — not a schema'd config, and not
+read by Quality Center scoring (scoring stays transparent). It exists to apply
+consistent project-wide posture across features; confirm a `TESTING.md` change
+with the user since it shifts every feature's posture.
 
 ## Capability Map — Which Modality Proves Which Check
 
@@ -179,7 +181,7 @@ or any strength label.
 | --- | --- |
 | `specs/<feature>/test-spec.md` | `assets/test-spec-template.md` |
 | `specs/<feature>/test-report.md` | `assets/test-report-template.md` |
-| repo-root `quality-policy.yaml` | `assets/quality-policy.template.yaml` (schema `assets/quality-policy.schema.json`) |
+| repo-root `TESTING.md` (optional) | `assets/TESTING.template.md` |
 
 Status vocabularies (test type, result status, coverage status) live in
 `references/vocabularies.md`.
@@ -187,16 +189,16 @@ Status vocabularies (test type, result status, coverage status) live in
 ## Operating Rules
 
 - May edit tests, test fixtures, test scripts, `specs/<feature>/test-spec.md`,
-  `specs/<feature>/test-report.md`, and repo-root `quality-policy.yaml` (only
-  with user confirmation, since policy changes affect every feature).
+  `specs/<feature>/test-report.md`, and repo-root `TESTING.md` (only with user
+  confirmation, since posture changes affect every feature).
 - Never author `depth`, `reliability`, a 1–5 risk weight, or a `HIGH/MEDIUM/LOW`
   confidence verdict. Record facts (priority, test type, run result) only.
 - Avoid unrelated refactors and unrelated production-code changes.
 - Never include secrets, cookies, tokens, database URLs, or private customer
   data in specs, reports, logs, or artifacts.
 - Never report pass/fail without command output or an auditable artifact.
-- Stay standalone-safe: never require `quality-policy.yaml`; fall back to the
-  baked-in default when absent.
+- Stay standalone-safe: never require `TESTING.md`; fall back to the baked-in
+  default when absent.
 
 ## When Not To Use
 

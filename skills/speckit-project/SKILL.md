@@ -200,8 +200,8 @@ is complete for the accepted scope, and relevant tests/checks have passed (via
 - `lifecycle` / `maintenance`: update specs before code when accepted behavior
   changes, then plan/tasks/code/tests.
 - Branch, release, PR, and merge operations require an explicit user request.
-- Never edit `test-coverage`'s artifacts (`test-spec.md`, `test-report.md`) or
-  repo-root `quality-policy.yaml`.
+- Never edit `test-coverage`'s artifacts (`test-spec.md`, `test-report.md`,
+  repo-root `TESTING.md`).
 
 ## When Not To Use
 
