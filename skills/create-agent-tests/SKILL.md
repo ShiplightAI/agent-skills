@@ -83,6 +83,12 @@ template). A good case makes the executing agent unlikely to guess:
   from **product verification** (run the checks).
 - List concrete checks: browser pages/states, API routes and status codes, DB
   tables/rows, audit events, log filters, telemetry queries, timing.
+- Make each assertion **unconditional** for state the test itself creates. A
+  check gated on an optional affordance ("if the UI offers X, verify Y") lets
+  the agent skip Y and still PASS whenever X isn't found — silently dropping the
+  coverage the case exists to provide. For fixtures you control (a freshly
+  created token, org, etc.), require the affordance and assert on it directly;
+  reserve conditional wording for genuinely environment-dependent surfaces.
 - Name the exact evidence each behavior requires.
 - Keep cases portable; bind environment specifics under the testing-environments
   section, not in the steps.
