@@ -1,6 +1,6 @@
 ---
 name: test-coverage
-description: Drive comprehensive test creation for a feature, spec, module, or PR. Decide what must be tested, pick the testing strategy at the lowest sufficient cost, drive the test producers to author the tests, run them, and record the session — what was tested, by what test type, and what passed — in specs/<feature>/test-spec.md and test-report.md. Sibling of speckit-project; drives the producers create-yaml-tests and create-agent-tests.
+description: Drive comprehensive test creation for a feature, spec, module, or PR. Decide what must be tested, pick the testing strategy at the lowest sufficient cost, drive the test producers to author the tests, run them, and record the session — what was tested, by what test type, and what passed — in specs/<feature>/test-spec.md and test-report.md. Drives the producers create-yaml-tests and create-agent-tests.
 ---
 
 # Test Coverage
@@ -202,7 +202,7 @@ Status vocabularies (test type, result status, coverage status) live in
 
 ## When Not To Use
 
-- When the user wants project orchestration, a PRD, or a feature breakdown: use
-  `speckit-project`.
+- When the user wants project orchestration, a PRD, or a feature breakdown:
+  that is project-level work outside this skill's scope.
 - When the user only wants a code review with no test creation: use `review`.
 - When implementation does not exist and the user only wants planning.

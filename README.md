@@ -24,11 +24,10 @@ npx add-mcp "npx -y @shiplightai/mcp@latest" -n shiplight --env PWDEBUG=console
 | `/triage` | Reproduce failing E2E tests, diagnose root causes, fix YAML, and report app bugs |
 | `/cloud` | Sync local tests with Shiplight cloud for scheduled runs, team collaboration (subscription required) |
 
-### Spec-driven development
+### Test coverage
 
 | Skill | Purpose |
 |-------|---------|
-| `/speckit-project` | Drive spec-driven (or spec-less) development: PRD, feature breakdown, active feature, and the specify → plan → tasks → implement lifecycle |
 | `/test-coverage` | After a feature/PR, pick the testing strategy and drive the producers to write comprehensive tests; record what was tested and by what type |
 
 ### Review helpers
