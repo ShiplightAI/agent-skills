@@ -90,7 +90,7 @@ statements:
 
 Use the confirmed target URL as `base_url`.
 
-If the project uses shared auth, tests usually need no auth block. If the test requires per-test auth, add `use.auth` and optional `args`. If the project already has another Playwright-native auth pattern wired through config or `storageState`, follow that existing pattern instead of rewriting it just to match the examples. See `auth.md`.
+If the project uses shared auth, tests usually need no auth block. If the test requires per-test auth, add `use.account.auth` and optional `args`. If the project already has another Playwright-native auth pattern wired through config or `storageState`, follow that existing pattern instead of rewriting it just to match the examples. See `auth.md`.
 
 Do not write statements from memory. Always walk the app first.
 

@@ -121,7 +121,11 @@ Key points:
 - The `args` object is passed directly to `login(args)`.
 - The auth script can accept any fields the login flow needs, such as usernames, passwords, TOTP secrets, org IDs, or API tokens.
 - The auth script owns caching and expiration policy for `.auth/*`.
-- Tests without `use.auth` run with the default context. If shared auth is configured, they inherit that `storageState`; otherwise they run unauthenticated.
+- Tests without `use.account.auth` run with the default context. If shared auth is configured, they inherit that `storageState`; otherwise they run unauthenticated.
+
+#### Where credentials come from
+
+Shared-account setup reads secrets from `process.env` (e.g. `process.env.PASSWORD`), because one identity is selected per run via the environment. Per-test auth instead receives credentials through the `args` object, so a single run can log in as different users. In both cases the actual value comes from `.env`/CI secrets, not the YAML: pass it as a templated placeholder (`password: "{{ADMIN_PASSWORD}}"`, resolved from the env var) rather than a literal. Never write a raw password into `args`. See "Secrets Policy" below.
 
 ## Agent Login Helpers
 

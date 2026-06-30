@@ -56,7 +56,7 @@ Agents may edit:
 - `auth.setup.ts`
 - `*.login.ts`
 - `auth/**/*.login.ts`
-- existing project auth helpers referenced by `playwright.config.ts` or YAML `use.auth`
+- existing project auth helpers referenced by `playwright.config.ts` or YAML `use.account.auth`
 - `templates/**/*.tmpl.yaml`
 - `helpers/**/*.func.ts`
 - `fixtures/**`
@@ -86,14 +86,6 @@ If the project's `package.json` defines a more specific script, prefer that scri
 
 ## Source Of Truth
 
-When sources disagree, this precedence applies:
-
-1. Explicit user instruction
-2. Feature or journey spec in `specs/tests/`
-3. Existing YAML test `goal`, step `intent`, and `VERIFY` assertions
-4. Current app behavior
-5. Project context in `specs/context.md` and `knowledge/`
-6. Agent docs in this skill
-7. Agent inference
+When sources disagree, apply the precedence order defined under "Ground Truth" in `SKILL.md`.
 
 If app behavior conflicts with a spec or test goal, report the mismatch. Do not silently rewrite the test to match current behavior.

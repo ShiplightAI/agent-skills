@@ -69,7 +69,7 @@ Order work by dependencies first, then priority, then risk.
 
 Set up or update project files as needed:
 
-1. Scaffold the Shiplight project files if neccessary.
+1. Scaffold the Shiplight project files if necessary.
 2. Record shared base URL, account-role details, auth-setup details, or required env vars in `specs/context.md` or `knowledge/` when needed.
 3. Create or reuse shared auth setup, per-test auth scripts, or another existing Playwright-native auth setup when needed.
 4. Read `shiplight://yaml-test-spec` and `shiplight://schemas/action-entity`.

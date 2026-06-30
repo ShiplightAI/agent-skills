@@ -85,7 +85,7 @@ On every invocation:
 | Writing new tests | `references/new-tests.md`, `references/test-design-guide.md`, `references/test-implementation-guide.md` |
 | Updating or fixing tests | `references/updating-tests.md`, `references/test-design-guide.md`, `references/test-implementation-guide.md` |
 | Auth setup and login | `references/auth.md` |
-| Running tests in CI / GitHub Actions | `references/ci.md` |
+| Running tests in CI / GitHub Actions, incl. auto-triage of failures | `references/ci.md` |
 | YAML syntax or actions | `references/test-implementation-guide.md`; also read `shiplight://yaml-test-spec` and `shiplight://schemas/action-entity` before writing YAML |
 
 ## Core Rules

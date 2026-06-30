@@ -37,20 +37,16 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install dependencies
-        working-directory: tests/e2e
-        run: npm install
+        run: npm ci
 
       - name: Install Playwright browser
-        working-directory: tests/e2e
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests
-        working-directory: tests/e2e
         run: npx shiplight test
 
       - name: Upload results to Shiplight
         if: always()                       # upload even when tests fail
-        working-directory: tests/e2e
         env:
           SHIPLIGHT_REPORT_TO_CLOUD: '1'   # required on non-Shiplight runners to enable upload
         run: npx shiplight report
@@ -80,24 +76,90 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install dependencies
-        working-directory: tests/e2e
-        run: npm install
+        run: npm ci
 
       - name: Run E2E tests
-        working-directory: tests/e2e
         run: npx shiplight test
 
       - name: Upload results to Shiplight
         if: always()
-        working-directory: tests/e2e
         run: npx shiplight report
 ```
 
 Runner sizes: `shiplight-small` (4 vCPU / 16 GB), `shiplight-medium` (8 / 32), `shiplight-large` (16 / 64), `shiplight-xlarge` (32 / 128).
 
+## Optional — auto-triage CI failures
+
+When a test workflow above goes red, you can have an AI agent diagnose the failure and, for fixable spec issues, repair it automatically. The shared pipeline lives in [ShiplightAI/ci-triage]; on a failed run it reads the run logs **and** the uploaded report artifacts (screenshots/traces), posts a diagnosis to Slack, and for failures it classifies as fixable spec issues applies the fix, re-runs the test, and opens a PR. It never auto-merges.
+
+Wiring it up is two steps. Only offer this once a test workflow exists — triage triggers off that workflow's completion.
+
+### Step 1 — upload the report artifact from the test workflow
+
+Triage reads failure evidence from a GitHub artifact, not the cloud. Add this step to the test workflow (`e2e.yml` from Option 1/2 above), after the test step:
+
+```yaml
+      - name: Upload test report (for triage)
+        if: ${{ !cancelled() }}
+        uses: ShiplightAI/ci-triage/upload-report@v1
+        # sharded/matrix jobs: give each shard a unique name
+        # with:
+        #   name: test-report-shard-${{ matrix.shardIndex }}
+        #   retention-days: "1"
+```
+
+The helper bakes in the `shiplight-report/` path and drops the heavy Playwright traces (`*.zip`) and videos (`*.webm`) the agent never reads (~80% of the size). This is separate from `npx shiplight report` — keep that step too; the cloud report still gets full traces/videos for humans.
+
+### Step 2 — add the caller workflow
+
+The `workflow_run` trigger and the per-repo credential mapping **must** stay in the consumer repo (a `workflow_run` trigger is illegal in a reusable workflow, and secret names differ per repo). Everything else lives in the reusable workflow. Create `.github/workflows/ci-failure-triage.yml`:
+
+```yaml
+name: CI Failure Triage
+
+on:
+  workflow_run:
+    workflows: [E2E Tests]     # exact `name:` of each test workflow to watch
+    types: [completed]
+
+jobs:
+  triage:
+    uses: ShiplightAI/ci-triage/.github/workflows/triage.yml@v1   # pin to an immutable tag, not @main
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    with:
+      triage-runner: ubuntu-latest      # read-only diagnosis job
+      autofix-runner: shiplight-medium  # re-runs tests, so needs browsers/network
+      node-version: "20"
+      allowed-paths: "tests templates"  # top-level dirs the autofix agent may edit (hard guard)
+      slack-channel: ${{ vars.SLACK_CHANNEL_ID || '' }}   # empty disables Slack
+    secrets:
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      openai_api_key: ${{ secrets.OPENAI_API_KEY }}        # Codex fallback when Claude is unavailable
+      autofix_github_token: ${{ secrets.AUTOFIX_GITHUB_TOKEN }}  # PAT/App token to open the PR; falls back to GITHUB_TOKEN
+      slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+      # Per-repo credential mapping → generic env for the autofix re-run.
+      # One KEY=VALUE per line; values must be single-line.
+      extra_env: |
+        BASE_URL=${{ vars.BASE_URL || 'https://example.com' }}
+        MY_TEST_USER_PASSWORD=${{ secrets.MY_TEST_USER_PASSWORD }}
+        MY_TEST_USER_2FA_SECRET=${{ secrets.MY_TEST_USER_2FA_SECRET }}
+```
+
+Notes:
+
+- `workflows:` must list the exact `name:` of each test workflow to watch. Never list the triage workflow itself there.
+- `extra_env` maps this repo's secret names onto the generic env the autofix job uses so `npx shiplight test` and the MCP browser can authenticate. Mirror the `env:` block from the test workflow.
+- Provide at least one model credential (`claude_code_oauth_token` or `anthropic_api_key`); `openai_api_key` enables the Codex fallback. `autofix_github_token` and `slack_bot_token` are optional.
+- `autofix-runner` re-runs the failing test, so it needs browsers/network — use a Shiplight runner, or install Chromium in a stock runner the same way the test workflow does.
+- This job runs privileged (`contents: write`, live credentials). Pin `uses:` to an immutable tag (`@v1.x.y`), not a branch.
+
 ## Notes
 
-- `working-directory: tests/e2e` assumes the Shiplight project lives there. Adjust to your project root.
+- These workflows assume the Shiplight project lives at the repository root (the canonical layout). If it lives in a subdirectory, add `working-directory: <path>` to each `run:` step (or a `defaults.run.working-directory` at the job level).
 - For custom integrations the CLI doesn't cover (non-Shiplight test frameworks, bespoke pipelines), the raw publish REST calls live outside this skill; the [cloud_v2] skill documents only the read side.
 
 [cloud_v2]: ../../cloud_v2/SKILL.md
+[ShiplightAI/ci-triage]: https://github.com/ShiplightAI/ci-triage
