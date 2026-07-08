@@ -1,5 +1,10 @@
 # Shiplight Agent Skills
 
+> [!WARNING]
+> **This repository is deprecated and archived.**
+> Development has moved to **[ShiplightAI/agent-skills-v2](https://github.com/ShiplightAI/agent-skills-v2)**.
+> This repo is now read-only.
+
 AI-powered test automation skills — ship with confidence by letting your coding agent verify, test, and iterate autonomously.
 
 Single source of truth for every agent (Claude Code, Cursor, Codex, and [40+ more](https://github.com/vercel-labs/skills#supported-agents)). Install skills with [`skills`](https://www.npmjs.com/package/skills) and the MCP server with [`add-mcp`](https://www.npmjs.com/package/add-mcp).
